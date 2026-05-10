@@ -1,73 +1,81 @@
 extends CanvasLayer
 
-var _queue: Array = []
-var _showing: bool = false
+var _level_label: Label
 
 func _ready():
 	layer = 10
+	_build()
+	hide()
 
-func notify_xp(amount: int):
-	_enqueue("+ %d XP" % amount, Color("#00ff99"), false)
+func _build():
+	var overlay = ColorRect.new()
+	overlay.color = Color(0, 0, 0, 0.65)
+	overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
+	add_child(overlay)
 
-func notify_level_up(new_level: int):
-	_enqueue("LEVEL UP !\nNiveau %d  —  +3 Points de Stats" % new_level, Color("#ffd700"), true)
+	var center = CenterContainer.new()
+	center.set_anchors_preset(Control.PRESET_FULL_RECT)
+	add_child(center)
 
-func _enqueue(text: String, color: Color, big: bool):
-	_queue.append({"text": text, "color": color, "big": big})
-	_flush()
-
-func _flush():
-	if _showing or _queue.is_empty(): return
-	_showing = true
-	_show(_queue.pop_front())
-
-func _show(data: Dictionary):
-	var panel = PanelContainer.new()
 	var style = StyleBoxFlat.new()
-	style.bg_color = Color(0.04, 0.07, 0.12, 0.93)
+	style.bg_color = Color(0.05, 0.08, 0.14, 1)
 	style.border_width_left = 2; style.border_width_top = 2
 	style.border_width_right = 2; style.border_width_bottom = 2
-	style.border_color = data.color
-	style.corner_radius_top_left = 8; style.corner_radius_top_right = 8
-	style.corner_radius_bottom_left = 8; style.corner_radius_bottom_right = 8
-	style.shadow_color = Color(data.color.r, data.color.g, data.color.b, 0.3)
-	style.shadow_size = 6
+	style.border_color = Color("#ffd700")
+	style.corner_radius_top_left = 12; style.corner_radius_top_right = 12
+	style.corner_radius_bottom_left = 12; style.corner_radius_bottom_right = 12
+	style.shadow_color = Color(1, 0.84, 0, 0.25)
+	style.shadow_size = 10
+
+	var panel = PanelContainer.new()
 	panel.add_theme_stylebox_override("panel", style)
+	center.add_child(panel)
 
 	var margin = MarginContainer.new()
-	margin.add_theme_constant_override("margin_left", 24)
-	margin.add_theme_constant_override("margin_right", 24)
-	margin.add_theme_constant_override("margin_top", 12)
-	margin.add_theme_constant_override("margin_bottom", 12)
-
-	var label = Label.new()
-	label.text = data.text
-	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	label.add_theme_color_override("font_color", data.color)
-	label.add_theme_font_size_override("font_size", 22 if data.big else 16)
-
-	margin.add_child(label)
+	margin.add_theme_constant_override("margin_left", 50)
+	margin.add_theme_constant_override("margin_right", 50)
+	margin.add_theme_constant_override("margin_top", 40)
+	margin.add_theme_constant_override("margin_bottom", 40)
 	panel.add_child(margin)
-	add_child(panel)
 
-	await get_tree().process_frame
+	var vbox = VBoxContainer.new()
+	vbox.alignment = BoxContainer.ALIGNMENT_CENTER
+	vbox.add_theme_constant_override("separation", 20)
+	margin.add_child(vbox)
 
-	var vp = get_viewport().get_visible_rect().size
-	panel.position = Vector2((vp.x - panel.size.x) / 2.0, -panel.size.y - 10)
-	panel.modulate.a = 0.0
+	_level_label = Label.new()
+	_level_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_level_label.add_theme_color_override("font_color", Color("#ffd700"))
+	_level_label.add_theme_font_size_override("font_size", 32)
+	vbox.add_child(_level_label)
 
-	var t_in = create_tween().set_parallel(true)
-	t_in.tween_property(panel, "position:y", 50.0, 0.35).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_BACK)
-	t_in.tween_property(panel, "modulate:a", 1.0, 0.25)
-	await t_in.finished
+	var sep = HSeparator.new()
+	vbox.add_child(sep)
 
-	await get_tree().create_timer(3.0 if data.big else 2.0).timeout
+	var sub = Label.new()
+	sub.text = "+3 Points de Stats disponibles !"
+	sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	sub.add_theme_color_override("font_color", Color("#00f2ff"))
+	sub.add_theme_font_size_override("font_size", 16)
+	vbox.add_child(sub)
 
-	var t_out = create_tween().set_parallel(true)
-	t_out.tween_property(panel, "position:y", -panel.size.y - 10, 0.4).set_ease(Tween.EASE_IN).set_trans(Tween.TRANS_QUAD)
-	t_out.tween_property(panel, "modulate:a", 0.0, 0.35)
-	await t_out.finished
+	var btn_style = StyleBoxFlat.new()
+	btn_style.bg_color = Color(0.08, 0.12, 0.2)
+	btn_style.border_width_left = 1; btn_style.border_width_top = 1
+	btn_style.border_width_right = 1; btn_style.border_width_bottom = 2
+	btn_style.border_color = Color("#ffd700")
+	btn_style.corner_radius_top_left = 6; btn_style.corner_radius_top_right = 6
+	btn_style.corner_radius_bottom_left = 6; btn_style.corner_radius_bottom_right = 6
+	btn_style.content_margin_left = 30; btn_style.content_margin_right = 30
+	btn_style.content_margin_top = 10; btn_style.content_margin_bottom = 10
 
-	panel.queue_free()
-	_showing = false
-	_flush()
+	var btn = Button.new()
+	btn.text = "FERMER"
+	btn.add_theme_font_size_override("font_size", 14)
+	btn.add_theme_stylebox_override("normal", btn_style)
+	btn.pressed.connect(hide)
+	vbox.add_child(btn)
+
+func notify_level_up(new_level: int):
+	_level_label.text = "⚡ LEVEL UP !\nNiveau %d" % new_level
+	show()
