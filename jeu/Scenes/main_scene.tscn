@@ -25,7 +25,7 @@ const MISSIONS_SCENE = preload(\"res://Scenes/MissionsUI.tscn\")
 
 var current_page: int = 0
 var total_pages: int = 5
-var _lvl_popup: Control
+var _lvl_popup: AcceptDialog
 
 @onready var stats_labels = {
 	\"str\": get_node_or_null(\"VBox/GameZone/VBox/StatsFrame/Margin/StatsGrid/Str/Val\"),
@@ -147,75 +147,15 @@ func update_ui():
 	update_inventory_display()
 
 func _show_level_up(new_level: int):
-	var lbl = _lvl_popup.get_node_or_null(\"LvlLabel\")
-	if lbl:
-		lbl.text = \"LEVEL UP !\\nNiveau %d\" % new_level
-	_lvl_popup.show()
+	_lvl_popup.dialog_text = \"Niveau %d atteint !\\n\\n+3 Points de Stats disponibles !\" % new_level
+	_lvl_popup.popup_centered()
 
-func _build_level_up_popup() -> Control:
-	var popup = Control.new()
-	popup.set_anchors_preset(Control.PRESET_FULL_RECT)
-	popup.mouse_filter = Control.MOUSE_FILTER_STOP
-	popup.z_index = 100
-
-	var bg = ColorRect.new()
-	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
-	bg.color = Color(0, 0, 0, 0.65)
-	bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	popup.add_child(bg)
-
-	var center = CenterContainer.new()
-	center.set_anchors_preset(Control.PRESET_FULL_RECT)
-	popup.add_child(center)
-
-	var style = StyleBoxFlat.new()
-	style.bg_color = Color(0.05, 0.08, 0.14)
-	style.border_width_left = 2; style.border_width_top = 2
-	style.border_width_right = 2; style.border_width_bottom = 2
-	style.border_color = Color(\"#ffd700\")
-	style.corner_radius_top_left = 12; style.corner_radius_top_right = 12
-	style.corner_radius_bottom_left = 12; style.corner_radius_bottom_right = 12
-
-	var panel = PanelContainer.new()
-	panel.add_theme_stylebox_override(\"panel\", style)
-	center.add_child(panel)
-
-	var margin = MarginContainer.new()
-	margin.add_theme_constant_override(\"margin_left\", 50)
-	margin.add_theme_constant_override(\"margin_right\", 50)
-	margin.add_theme_constant_override(\"margin_top\", 40)
-	margin.add_theme_constant_override(\"margin_bottom\", 40)
-	panel.add_child(margin)
-
-	var vbox = VBoxContainer.new()
-	vbox.add_theme_constant_override(\"separation\", 20)
-	margin.add_child(vbox)
-
-	var lbl = Label.new()
-	lbl.name = \"LvlLabel\"
-	lbl.text = \"LEVEL UP !\"
-	lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	lbl.add_theme_color_override(\"font_color\", Color(\"#ffd700\"))
-	lbl.add_theme_font_size_override(\"font_size\", 32)
-	vbox.add_child(lbl)
-
-	var sep = HSeparator.new()
-	vbox.add_child(sep)
-
-	var sub = Label.new()
-	sub.text = \"+3 Points de Stats disponibles !\"
-	sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	sub.add_theme_color_override(\"font_color\", Color(\"#00f2ff\"))
-	sub.add_theme_font_size_override(\"font_size\", 16)
-	vbox.add_child(sub)
-
-	var btn = Button.new()
-	btn.text = \"FERMER\"
-	btn.pressed.connect(popup.hide)
-	vbox.add_child(btn)
-
-	popup.hide()
-	return popup
+func _build_level_up_popup() -> AcceptDialog:
+	var dialog = AcceptDialog.new()
+	dialog.title = \"LEVEL UP !\"
+	dialog.ok_button_text = \"FERMER\"
+	dialog.exclusive = false
+	return dialog
 "
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_btn"]
