@@ -54,7 +54,7 @@ func _run():
 
 		# --- RANG S ---
 		{ "id": "s_performance", "title": "Performance", "desc": "1 heure de cardio intense.", "rank": 6, "type": 0, "xp": 14000, "req_end": 65 },
-		{ "id": "s_maitrise", "title": "Maîtrise", "desc": "Se lever avant 7h30 pendant 7 jours.", "rank": 6, "type": 0, "xp": 0, "stat": 8, "stat_amount": 1, "req_wil": 60 },
+		{ "id": "s_maitrise", "title": "Maîtrise", "desc": "Se lever avant 7h30 pendant 7 jours.", "rank": 6, "type": 0, "xp": 8000, "stat": 8, "stat_amount": 1, "req_wil": 60 },
 		{ "id": "s_corps", "title": "Corps", "desc": "Mobilité et contrôle corporel total.", "rank": 6, "type": 0, "xp": 9000, "req_dex": 60 },
 		{ "id": "s_explosivite", "title": "Explosivité", "desc": "Séance sportive de niveau athlète.", "rank": 6, "type": 0, "xp": 15000, "req_str": 65 },
 		{ "id": "s_calme", "title": "Calme", "desc": "Méditer 15 minutes.", "rank": 6, "type": 0, "xp": 6000, "req_wis": 55 },

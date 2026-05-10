@@ -85,13 +85,14 @@ func save_game():
 	var file = FileAccess.open(SAVE_PATH, FileAccess.WRITE)
 	if file:
 		var save_data = {
-			"hp": hp, "lvl": lvl, "xp": xp, "stat_points": stat_points,
+			"hp": hp, "max_hp": max_hp, "lvl": lvl, "xp": xp, "stat_points": stat_points,
+			"end": end, "max_end": max_end,
 			"stats": stats, "inventory": inventory,
 			"available_missions": available_missions,
 			"available_weekly_missions": available_weekly_missions,
 			"time_until_reset": time_until_reset,
 			"time_until_weekly_reset": time_until_weekly_reset,
-			"last_save_time": Time.get_unix_time_from_system() 
+			"last_save_time": Time.get_unix_time_from_system()
 		}
 		file.store_string(JSON.stringify(save_data))
 
@@ -102,9 +103,13 @@ func load_game():
 	if typeof(save_data) == TYPE_DICTIONARY:
 		lvl = int(save_data.get("lvl", 1))
 		hp = int(save_data.get("hp", 100))
+		max_hp = int(save_data.get("max_hp", 100))
 		xp = int(save_data.get("xp", 0))
 		stat_points = int(save_data.get("stat_points", 0))
+		end = int(save_data.get("end", 100))
+		max_end = int(save_data.get("max_end", 100))
 		stats = save_data.get("stats", stats)
+		inventory = save_data.get("inventory", [])
 		available_missions = save_data.get("available_missions", [])
 		available_weekly_missions = save_data.get("available_weekly_missions", [])
 		
@@ -129,13 +134,25 @@ func generate_missions():
 	stats_updated.emit()
 
 func accept_mission(mission_dict: Dictionary) -> bool:
-	if end >= mission_dict.end_cost:
-		end -= mission_dict.end_cost
-		mission_dict["status"] = "in_progress"
-		stats_updated.emit()
-		save_game()
-		return true
-	return false
+	var m_data = all_missions.get(mission_dict.id)
+	if not m_data: return false
+	if end < mission_dict.end_cost: return false
+
+	# req_end dans MissionData correspond à la stat "vit" (vitalité/endurance)
+	var req_map = {
+		"str": m_data.req_str, "dex": m_data.req_dex, "vit": m_data.req_end,
+		"int": m_data.req_int, "wis": m_data.req_wis, "cha": m_data.req_cha,
+		"per": m_data.req_per, "wil": m_data.req_wil
+	}
+	for stat_key in req_map:
+		if stats.get(stat_key, 0) < req_map[stat_key]:
+			return false
+
+	end -= mission_dict.end_cost
+	mission_dict["status"] = "in_progress"
+	stats_updated.emit()
+	save_game()
+	return true
 
 func process_mission_result(mission_dict: Dictionary, success: bool):
 	var m_data = all_missions.get(mission_dict.id)

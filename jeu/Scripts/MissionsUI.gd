@@ -1,6 +1,7 @@
 extends MarginContainer
 
 @onready var mission_vbox = VBoxContainer.new()
+var _timer_acc: float = 0.0
 
 func _ready():
 	add_theme_constant_override("margin_left", 20)
@@ -118,7 +119,10 @@ func _create_card(m_dict, is_weekly):
 	v.add_child(btns); mar.add_child(v); card.add_child(mar)
 	return card
 
-func _process(_delta):
+func _process(delta):
+	_timer_acc += delta
+	if _timer_acc < 1.0: return
+	_timer_acc = 0.0
 	var d = mission_vbox.get_node_or_null("TimerDaily")
 	if d: d.text = "RESET QUOTIDIEN : " + GlobalEngine.get_time_string()
 	var w = mission_vbox.get_node_or_null("TimerWeekly")

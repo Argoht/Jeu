@@ -4,7 +4,7 @@ extends Resource
 ## Énumérations pour structurer les données proprement
 enum Rank { F, E, D, C, B, A, S }
 enum MissionType { QUOTIDIENNE, HEBDOMADAIRE }
-enum Stat { AUCUNE, STR, DEX, END, INT, WIS, CHA, PER, WIL }
+enum Stat { AUCUNE, STR, DEX, VIT, INT, WIS, CHA, PER, WIL }
 
 @export_category("Informations Générales")
 @export var id: String = "mission_001"
