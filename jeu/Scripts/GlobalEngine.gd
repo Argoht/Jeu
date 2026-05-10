@@ -3,6 +3,7 @@ extends Node
 signal stats_updated
 signal leveled_up(new_level)
 signal xp_gained(amount)
+signal mission_completed(xp_amount, stat_name, stat_amount)
 signal tab_changed(tab_name) 
 
 const SAVE_PATH = "user://save_game.dat"
@@ -160,9 +161,14 @@ func process_mission_result(mission_dict: Dictionary, success: bool):
 	if success:
 		xp += m_data.base_xp
 		xp_gained.emit(m_data.base_xp)
+		var stat_name   = ""
+		var stat_amount = 0
 		if m_data.reward_stat != 0:
 			var stat_keys = ["", "str", "dex", "vit", "int", "wis", "cha", "per", "wil"]
-			stats[stat_keys[m_data.reward_stat]] += m_data.reward_stat_amount
+			stat_name   = stat_keys[m_data.reward_stat]
+			stat_amount = m_data.reward_stat_amount
+			stats[stat_name] += stat_amount
+		mission_completed.emit(m_data.base_xp, stat_name, stat_amount)
 		mission_dict["status"] = "completed"
 		check_level_up()
 	else:
