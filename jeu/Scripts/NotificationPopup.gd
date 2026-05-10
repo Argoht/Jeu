@@ -1,17 +1,20 @@
-extends CanvasLayer
+extends Control
 
 var _level_label: Label
 
 func _ready():
-	layer = 10
+	set_anchors_preset(Control.PRESET_FULL_RECT)
+	mouse_filter = Control.MOUSE_FILTER_STOP
+	z_index = 100
 	_build()
 	hide()
 
 func _build():
-	var overlay = ColorRect.new()
-	overlay.color = Color(0, 0, 0, 0.65)
-	overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
-	add_child(overlay)
+	var bg = ColorRect.new()
+	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
+	bg.color = Color(0, 0, 0, 0.65)
+	bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(bg)
 
 	var center = CenterContainer.new()
 	center.set_anchors_preset(Control.PRESET_FULL_RECT)
@@ -77,5 +80,5 @@ func _build():
 	vbox.add_child(btn)
 
 func notify_level_up(new_level: int):
-	_level_label.text = "⚡ LEVEL UP !\nNiveau %d" % new_level
+	_level_label.text = "LEVEL UP !\nNiveau %d" % new_level
 	show()
