@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="MissionData" format=3 uid="uid://j112umey11ba"]
+
+[ext_resource type="Script" uid="uid://7q6sivsis1nj" path="res://Scripts/MissionData.gd" id="1_dqgfq"]
+
+[resource]
+script = ExtResource("1_dqgfq")
+id = "c_activite"
+title = "Activité"
+description = "Marcher 10 km."
+rank = 3
+req_end = 16
+base_xp = 1400

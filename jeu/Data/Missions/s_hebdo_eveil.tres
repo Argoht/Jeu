@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="MissionData" format=3 uid="uid://bmefwe47pue4f"]
+
+[ext_resource type="Script" uid="uid://7q6sivsis1nj" path="res://Scripts/MissionData.gd" id="1_1ey1l"]
+
+[resource]
+script = ExtResource("1_1ey1l")
+id = "s_hebdo_eveil"
+title = "Éveil Total"
+description = "Semaine parfaite sur tous les fronts."
+rank = 6
+type = 1
+req_wil = 80
+base_xp = 25000
+reward_stat_amount = 5

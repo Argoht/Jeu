@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="MissionData" format=3 uid="uid://tk2ijv3lu84h"]
+
+[ext_resource type="Script" uid="uid://7q6sivsis1nj" path="res://Scripts/MissionData.gd" id="1_pkuvm"]
+
+[resource]
+script = ExtResource("1_pkuvm")
+id = "s_corps"
+title = "Corps"
+description = "Mobilité et contrôle corporel total."
+rank = 6
+req_dex = 60
+base_xp = 9000

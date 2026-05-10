@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="MissionData" format=3 uid="uid://d30881p0ylw4n"]
+
+[ext_resource type="Script" uid="uid://7q6sivsis1nj" path="res://Scripts/MissionData.gd" id="1_61o0v"]
+
+[resource]
+script = ExtResource("1_61o0v")
+id = "a_cardio"
+title = "Cardio"
+description = "1 heure d'effort continu."
+rank = 5
+req_end = 45
+base_xp = 7000

@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="MissionData" format=3 uid="uid://cyf01utnkqr5o"]
+
+[ext_resource type="Script" uid="uid://7q6sivsis1nj" path="res://Scripts/MissionData.gd" id="1_jfdrl"]
+
+[resource]
+script = ExtResource("1_jfdrl")
+id = "b_agilite"
+title = "Agilité"
+description = "Séance complète de mobilité."
+rank = 4
+req_dex = 28
+base_xp = 2600

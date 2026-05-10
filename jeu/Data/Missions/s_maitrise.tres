@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="MissionData" format=3 uid="uid://clt08ndwj5ggr"]
+
+[ext_resource type="Script" uid="uid://7q6sivsis1nj" path="res://Scripts/MissionData.gd" id="1_51mcg"]
+
+[resource]
+script = ExtResource("1_51mcg")
+id = "s_maitrise"
+title = "Maîtrise"
+description = "Se lever avant 7h30 pendant 7 jours."
+rank = 6
+req_wil = 60
+base_xp = 0
+reward_stat = 8
+reward_stat_amount = 1

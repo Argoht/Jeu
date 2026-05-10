@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="MissionData" format=3 uid="uid://u7m4sbiue777"]
+
+[ext_resource type="Script" uid="uid://7q6sivsis1nj" path="res://Scripts/MissionData.gd" id="1_cbpkb"]
+
+[resource]
+script = ExtResource("1_cbpkb")
+id = "s_performance"
+title = "Performance"
+description = "1 heure de cardio intense."
+rank = 6
+req_end = 65
+base_xp = 14000
