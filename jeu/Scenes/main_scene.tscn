@@ -25,6 +25,7 @@ const MISSIONS_SCENE = preload(\"res://Scenes/MissionsUI.tscn\")
 
 var current_page: int = 0
 var total_pages: int = 5
+var _lvl_popup: Control
 
 @onready var stats_labels = {
 	\"str\": get_node_or_null(\"VBox/GameZone/VBox/StatsFrame/Margin/StatsGrid/Str/Val\"),
@@ -45,12 +46,12 @@ func _ready():
 	btn_prev.pressed.connect(_change_page.bind(-1))
 	btn_next.pressed.connect(_change_page.bind(1))
 
-	var notif = preload(\"res://Scripts/NotificationPopup.gd\").new()
-	add_child(notif)
+	_lvl_popup = _build_level_up_popup()
+	add_child(_lvl_popup)
 
 	if is_instance_valid(GlobalEngine):
 		GlobalEngine.stats_updated.connect(update_ui)
-		GlobalEngine.leveled_up.connect(notif.notify_level_up)
+		GlobalEngine.leveled_up.connect(_show_level_up)
 		update_ui()
 
 func _change_page(step: int):
@@ -144,6 +145,77 @@ func update_ui():
 				btn.hide() 
 	
 	update_inventory_display()
+
+func _show_level_up(new_level: int):
+	var lbl = _lvl_popup.get_node_or_null(\"LvlLabel\")
+	if lbl:
+		lbl.text = \"LEVEL UP !\\nNiveau %d\" % new_level
+	_lvl_popup.show()
+
+func _build_level_up_popup() -> Control:
+	var popup = Control.new()
+	popup.set_anchors_preset(Control.PRESET_FULL_RECT)
+	popup.mouse_filter = Control.MOUSE_FILTER_STOP
+	popup.z_index = 100
+
+	var bg = ColorRect.new()
+	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
+	bg.color = Color(0, 0, 0, 0.65)
+	bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	popup.add_child(bg)
+
+	var center = CenterContainer.new()
+	center.set_anchors_preset(Control.PRESET_FULL_RECT)
+	popup.add_child(center)
+
+	var style = StyleBoxFlat.new()
+	style.bg_color = Color(0.05, 0.08, 0.14)
+	style.border_width_left = 2; style.border_width_top = 2
+	style.border_width_right = 2; style.border_width_bottom = 2
+	style.border_color = Color(\"#ffd700\")
+	style.corner_radius_top_left = 12; style.corner_radius_top_right = 12
+	style.corner_radius_bottom_left = 12; style.corner_radius_bottom_right = 12
+
+	var panel = PanelContainer.new()
+	panel.add_theme_stylebox_override(\"panel\", style)
+	center.add_child(panel)
+
+	var margin = MarginContainer.new()
+	margin.add_theme_constant_override(\"margin_left\", 50)
+	margin.add_theme_constant_override(\"margin_right\", 50)
+	margin.add_theme_constant_override(\"margin_top\", 40)
+	margin.add_theme_constant_override(\"margin_bottom\", 40)
+	panel.add_child(margin)
+
+	var vbox = VBoxContainer.new()
+	vbox.add_theme_constant_override(\"separation\", 20)
+	margin.add_child(vbox)
+
+	var lbl = Label.new()
+	lbl.name = \"LvlLabel\"
+	lbl.text = \"LEVEL UP !\"
+	lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	lbl.add_theme_color_override(\"font_color\", Color(\"#ffd700\"))
+	lbl.add_theme_font_size_override(\"font_size\", 32)
+	vbox.add_child(lbl)
+
+	var sep = HSeparator.new()
+	vbox.add_child(sep)
+
+	var sub = Label.new()
+	sub.text = \"+3 Points de Stats disponibles !\"
+	sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	sub.add_theme_color_override(\"font_color\", Color(\"#00f2ff\"))
+	sub.add_theme_font_size_override(\"font_size\", 16)
+	vbox.add_child(sub)
+
+	var btn = Button.new()
+	btn.text = \"FERMER\"
+	btn.pressed.connect(popup.hide)
+	vbox.add_child(btn)
+
+	popup.hide()
+	return popup
 "
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_btn"]
