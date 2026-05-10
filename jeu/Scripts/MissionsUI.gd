@@ -72,7 +72,9 @@ func _create_card(m_dict, is_weekly):
 	card.add_theme_stylebox_override("panel", s)
 
 	var v = VBoxContainer.new()
-	var mar = MarginContainer.new(); mar.add_theme_constant_override("margin_all", 15)
+	var mar = MarginContainer.new()
+	for side in ["margin_left", "margin_right", "margin_top", "margin_bottom"]:
+		mar.add_theme_constant_override(side, 15)
 	
 	var title = Label.new()
 	title.text = m_data.title.to_upper()
@@ -102,8 +104,14 @@ func _create_card(m_dict, is_weekly):
 	btns.add_theme_constant_override("separation", 20)
 	
 	if m_dict.status == "available":
-		var b = Button.new(); b.text = "S'ENGAGER (" + str(m_dict.end_cost) + " END)"
-		b.pressed.connect(func(): if GlobalEngine.accept_mission(m_dict): _display_missions_list())
+		var b = Button.new()
+		if GlobalEngine.hp <= 0:
+			b.text = "TROP BLESSÉ"
+			b.disabled = true
+			b.add_theme_color_override("font_color", Color("#ff4444"))
+		else:
+			b.text = "S'ENGAGER (" + str(m_dict.end_cost) + " END)"
+			b.pressed.connect(func(): if GlobalEngine.accept_mission(m_dict): _display_missions_list())
 		btns.add_child(b)
 	elif m_dict.status == "in_progress":
 		var f = Button.new(); f.text = "ÉCHEC"; f.add_theme_color_override("font_color", Color("#ff4444"))

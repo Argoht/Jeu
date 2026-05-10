@@ -26,12 +26,18 @@ var current_tab: String = "missions"
 
 # --- CYCLES DU SYSTÈME ---
 var reset_duration: float = 43200.0 # 12 heures
-var time_until_reset: float = reset_duration 
+var time_until_reset: float = reset_duration
 
 var weekly_reset_duration: float = 604800.0 # 7 jours
 var time_until_weekly_reset: float = weekly_reset_duration
 
 var auto_save_timer: float = 0.0
+
+# --- RÉGÉNÉRATION ---
+const HP_REGEN_RATE: float = 5.0 / 3600.0  # +5 HP par heure
+const END_REGEN_RATE: float = 10.0 / 3600.0 # +10 END par heure (END se dépense plus vite)
+var _hp_regen_acc: float = 0.0
+var _end_regen_acc: float = 0.0
 
 var stats: Dictionary = {
 	"str": 1, "dex": 1, "vit": 1, "int": 1,
@@ -65,6 +71,26 @@ func _process(delta):
 	if auto_save_timer >= 30.0:
 		auto_save_timer = 0.0
 		save_game()
+
+	if hp < max_hp:
+		_hp_regen_acc += delta * HP_REGEN_RATE
+		if _hp_regen_acc >= 1.0:
+			var gain = int(_hp_regen_acc)
+			hp = min(max_hp, hp + gain)
+			_hp_regen_acc -= gain
+			stats_updated.emit()
+	else:
+		_hp_regen_acc = 0.0
+
+	if end < max_end:
+		_end_regen_acc += delta * END_REGEN_RATE
+		if _end_regen_acc >= 1.0:
+			var gain = int(_end_regen_acc)
+			end = min(max_end, end + gain)
+			_end_regen_acc -= gain
+			stats_updated.emit()
+	else:
+		_end_regen_acc = 0.0
 
 func load_all_missions() -> void:
 	var path = "res://Data/Missions/"
@@ -119,6 +145,9 @@ func load_game():
 		var elapsed = current_time - float(save_data.get("last_save_time", current_time))
 		time_until_reset = max(0, float(save_data.get("time_until_reset", reset_duration)) - elapsed)
 		time_until_weekly_reset = max(0, float(save_data.get("time_until_weekly_reset", weekly_reset_duration)) - elapsed)
+		# Régén hors-ligne : applique les HP/END gagnés pendant l'absence
+		hp = min(max_hp, hp + int(elapsed * HP_REGEN_RATE))
+		end = min(max_end, end + int(elapsed * END_REGEN_RATE))
 
 func generate_missions():
 	var rank_int = get_rank_index(lvl)
@@ -138,6 +167,7 @@ func generate_missions():
 func accept_mission(mission_dict: Dictionary) -> bool:
 	var m_data = all_missions.get(mission_dict.id)
 	if not m_data: return false
+	if hp <= 0: return false
 	if end < mission_dict.end_cost: return false
 
 	# req_end dans MissionData correspond à la stat "vit" (vitalité/endurance)
