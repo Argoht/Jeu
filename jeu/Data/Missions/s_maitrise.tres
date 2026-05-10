@@ -9,6 +9,6 @@ title = "Maîtrise"
 description = "Se lever avant 7h30 pendant 7 jours."
 rank = 6
 req_wil = 60
-base_xp = 0
+base_xp = 8000
 reward_stat = 8
 reward_stat_amount = 1
