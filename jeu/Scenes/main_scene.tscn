@@ -44,9 +44,14 @@ func _ready():
 	$VBox/Nav/NavVBox/Row1/Button3.pressed.connect(_on_nav_pressed.bind(\"Missions\"))
 	btn_prev.pressed.connect(_change_page.bind(-1))
 	btn_next.pressed.connect(_change_page.bind(1))
-	
+
+	var notif = preload(\"res://Scripts/NotificationPopup.gd\").new()
+	add_child(notif)
+
 	if is_instance_valid(GlobalEngine):
 		GlobalEngine.stats_updated.connect(update_ui)
+		GlobalEngine.leveled_up.connect(notif.notify_level_up)
+		GlobalEngine.xp_gained.connect(notif.notify_xp)
 		update_ui()
 
 func _change_page(step: int):
