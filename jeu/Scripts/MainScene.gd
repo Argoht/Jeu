@@ -21,11 +21,13 @@ var current_page: int = 0
 var total_pages:  int = 5
 
 # Popups
-var _lvl_popup:     Control = null
-var _mission_popup: Control = null
+var _lvl_popup:      Control = null
+var _mission_popup:  Control = null
+var _fail_popup:     Control = null
 var _lvl_num_label:    Label = null
 var _miss_xp_label:    Label = null
 var _miss_stat_label:  Label = null
+var _fail_hp_label:    Label = null
 
 # Bug corrigé : "wis" retiré (pas de nœud dédié dans la scène)
 @onready var stats_labels = {
@@ -48,13 +50,16 @@ func _ready():
 
 	_lvl_popup     = _build_level_up_popup()
 	_mission_popup = _build_mission_popup()
+	_fail_popup    = _build_fail_popup()
 	add_child(_lvl_popup)
 	add_child(_mission_popup)
+	add_child(_fail_popup)
 
 	if is_instance_valid(GlobalEngine):
 		GlobalEngine.stats_updated.connect(update_ui)
 		GlobalEngine.leveled_up.connect(_show_level_up)
 		GlobalEngine.mission_completed.connect(_show_mission_complete)
+		GlobalEngine.mission_failed.connect(_show_mission_fail)
 		update_ui()
 
 # ---------------------------------------------------------------------------
@@ -150,6 +155,10 @@ func update_ui():
 func _show_level_up(new_level: int):
 	_lvl_num_label.text = "Niveau %d" % new_level
 	_lvl_popup.show()
+
+func _show_mission_fail(hp_lost: int):
+	_fail_hp_label.text = "- %d HP" % hp_lost
+	_fail_popup.show()
 
 func _show_mission_complete(xp_amount: int, stat_name: String, stat_amount: int):
 	_miss_xp_label.text = "+ %d XP" % xp_amount
@@ -290,6 +299,46 @@ func _build_mission_popup() -> Control:
 	btn.add_theme_stylebox_override("normal", btn_style)
 	btn.pressed.connect(overlay.hide)
 	vbox.add_child(btn)
+
+	overlay.hide()
+	return overlay
+
+func _build_fail_popup() -> Control:
+	var parts     = _make_popup_base(Color("#ff3333"))
+	var overlay   = parts[0] as Control
+	var vbox      = parts[1] as VBoxContainer
+	var btn_style = parts[2] as StyleBoxFlat
+
+	var title = Label.new()
+	title.text = "MISSION ÉCHOUÉE"
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title.add_theme_color_override("font_color", Color("#ff3333"))
+	title.add_theme_font_size_override("font_size", 22)
+	title.autowrap_mode = TextServer.AUTOWRAP_WORD
+	vbox.add_child(title)
+
+	vbox.add_child(HSeparator.new())
+
+	var msg = Label.new()
+	msg.text = "Tu as été blessé durant ta mission."
+	msg.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	msg.add_theme_color_override("font_color", Color(0.75, 0.75, 0.75))
+	msg.add_theme_font_size_override("font_size", 14)
+	msg.autowrap_mode = TextServer.AUTOWRAP_WORD
+	vbox.add_child(msg)
+
+	_fail_hp_label = Label.new()
+	_fail_hp_label.text = "- 20 HP"
+	_fail_hp_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_fail_hp_label.add_theme_color_override("font_color", Color("#ff4444"))
+	_fail_hp_label.add_theme_font_size_override("font_size", 28)
+	vbox.add_child(_fail_hp_label)
+
+	var btn2 = Button.new()
+	btn2.text = "COMPRIS"
+	btn2.add_theme_stylebox_override("normal", btn_style)
+	btn2.pressed.connect(overlay.hide)
+	vbox.add_child(btn2)
 
 	overlay.hide()
 	return overlay

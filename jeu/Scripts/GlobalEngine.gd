@@ -4,6 +4,7 @@ signal stats_updated
 signal leveled_up(new_level)
 signal xp_gained(amount)
 signal mission_completed(xp_amount, stat_name, stat_amount)
+signal mission_failed(hp_lost)
 signal tab_changed(tab_name) 
 
 const SAVE_PATH = "user://save_game.dat"
@@ -25,7 +26,7 @@ var items_per_page: int = 45
 var current_tab: String = "missions" 
 
 # --- CYCLES DU SYSTÈME ---
-var reset_duration: float = 43200.0 # 12 heures
+var reset_duration: float = 14400.0 # 4 heures
 var time_until_reset: float = reset_duration
 
 var weekly_reset_duration: float = 604800.0 # 7 jours
@@ -204,6 +205,7 @@ func process_mission_result(mission_dict: Dictionary, success: bool):
 	else:
 		hp = max(0, hp - 20)
 		mission_dict["status"] = "failed"
+		mission_failed.emit(20)
 	stats_updated.emit()
 	save_game()
 
