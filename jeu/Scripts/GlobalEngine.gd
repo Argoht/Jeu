@@ -155,7 +155,7 @@ func generate_missions():
 	if available_missions.is_empty():
 		var daily_pool = all_missions.values().filter(func(m): return m.type == 0 and m.rank <= rank_int)
 		daily_pool.shuffle()
-		for i in range(min(3, daily_pool.size())):
+		for i in range(min(5, daily_pool.size())):
 			available_missions.append({"id": daily_pool[i].id, "status": "available", "end_cost": 15})
 	
 	if available_weekly_missions.is_empty():
