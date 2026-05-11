@@ -1,6 +1,7 @@
 [gd_scene format=3 uid="uid://hm0j7mlm4xpe"]
 
 [ext_resource type="Script" path="res://Scripts/MainScene.gd" id="script_main"]
+[ext_resource type="PackedScene" uid="uid://dwhfyelvnk13n" path="res://Scenes/MissionsUI.tscn" id="missions_scene"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_btn"]
 content_margin_left = 12.0
@@ -1020,3 +1021,8 @@ theme_override_styles/panel = SubResource("StyleBoxFlat_inv_slot")
 custom_minimum_size = Vector2(62, 62)
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_inv_slot")
+
+[node name="MissionsPanel" parent="VBox/GameZone/VBox" instance=ExtResource("missions_scene")]
+visible = false
+layout_mode = 2
+size_flags_vertical = 3

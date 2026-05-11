@@ -1,17 +1,15 @@
 extends Control
 
-const MISSIONS_SCENE = preload("res://Scenes/MissionsUI.tscn")
-
 @onready var barre_hp     = $VBox/VitalsSection/VBox/Vitals/HP/BarreHP
 @onready var label_hp_num = $VBox/VitalsSection/VBox/Vitals/HP/Margin/HBox/Val
 @onready var barre_end     = $VBox/VitalsSection/VBox/Vitals/END/BarreEnd
 @onready var label_end_num = $VBox/VitalsSection/VBox/Vitals/END/Margin/HBox/Val
 @onready var barre_xp  = $VBox/VitalsSection/VBox/XPLine/BarreXP
 @onready var label_lvl = $VBox/VitalsSection/VBox/XPLine/LabelLvl
-@onready var game_zone_vbox = $VBox/GameZone/VBox
 @onready var hero_frame  = $VBox/GameZone/VBox/HeroFrame
 @onready var stats_frame = $VBox/GameZone/VBox/StatsFrame
 @onready var inv_panel   = $VBox/GameZone/VBox/InvPanel
+@onready var _missions_panel = $VBox/GameZone/VBox/MissionsPanel
 @onready var label_pseudo = $VBox/GameZone/VBox/HeroFrame/Margin/HeroLayout/AvatarCenter/HeaderInfo/Pseudo
 @onready var inv_grid    = $VBox/GameZone/VBox/InvPanel/Margin/VBox/GridZone/Grille
 @onready var page_label  = $VBox/GameZone/VBox/InvPanel/Margin/VBox/Header/PageLabel
@@ -20,9 +18,6 @@ const MISSIONS_SCENE = preload("res://Scenes/MissionsUI.tscn")
 
 var current_page: int = 0
 var total_pages:  int = 5
-
-# Missions panel (permanent, toggled like the other panels)
-var _missions_panel: Control = null
 
 # Popups
 var _lvl_popup:      Control = null
@@ -64,13 +59,6 @@ func _ready():
 	_rename_popup = _build_rename_popup()
 	add_child(_rename_popup)
 	_add_rename_button()
-
-	# MissionsUI créé une fois et gardé permanent (comme HeroFrame/StatsFrame/InvPanel)
-	_missions_panel = MISSIONS_SCENE.instantiate()
-	_missions_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_missions_panel.size_flags_vertical   = Control.SIZE_EXPAND_FILL
-	game_zone_vbox.add_child(_missions_panel)
-	_missions_panel.hide()
 
 	if is_instance_valid(GlobalEngine):
 		GlobalEngine.stats_updated.connect(update_ui)
