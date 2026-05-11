@@ -326,6 +326,7 @@ show_percentage = false
 
 [node name="GameZone" type="MarginContainer" parent="VBox" unique_id=1385013127]
 layout_mode = 2
+size_flags_horizontal = 3
 size_flags_vertical = 3
 theme_override_constants/margin_left = 15
 theme_override_constants/margin_right = 15
@@ -333,6 +334,9 @@ theme_override_constants/margin_bottom = 15
 
 [node name="VBox" type="VBoxContainer" parent="VBox/GameZone" unique_id=982059535]
 layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+custom_minimum_size = Vector2(0, 0)
 theme_override_constants/separation = 10
 
 [node name="PersonnageContent" type="VBoxContainer" parent="VBox/GameZone/VBox"]
