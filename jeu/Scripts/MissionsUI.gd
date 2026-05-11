@@ -3,10 +3,26 @@ extends MarginContainer
 var _main_vbox: VBoxContainer
 var _daily_vbox: VBoxContainer
 var _timer_acc: float = 0.0
+var _panel_style: StyleBoxFlat
 
 func _ready():
 	size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	size_flags_vertical = Control.SIZE_EXPAND_FILL
+
+	# Style identique aux panels HeroFrame/StatsFrame de l'onglet Personnage
+	_panel_style = StyleBoxFlat.new()
+	_panel_style.bg_color = Color(0.043, 0.047, 0.059, 1)
+	_panel_style.border_width_left = 1; _panel_style.border_width_top = 1
+	_panel_style.border_width_right = 1; _panel_style.border_width_bottom = 1
+	_panel_style.border_color = Color(0.149, 0.173, 0.212, 1)
+	_panel_style.corner_radius_top_left = 4; _panel_style.corner_radius_top_right = 4
+	_panel_style.corner_radius_bottom_right = 4; _panel_style.corner_radius_bottom_left = 4
+
+	# Marges internes identiques aux panels Personnage (15px)
+	add_theme_constant_override("margin_left", 15)
+	add_theme_constant_override("margin_right", 15)
+	add_theme_constant_override("margin_top", 10)
+	add_theme_constant_override("margin_bottom", 10)
 
 	_main_vbox = VBoxContainer.new()
 	_main_vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -16,6 +32,10 @@ func _ready():
 
 	GlobalEngine.missions_changed.connect(_build_static_ui)
 	_build_static_ui()
+
+func _draw():
+	if _panel_style:
+		_panel_style.draw(get_canvas_item(), Rect2(Vector2.ZERO, size))
 
 func _build_static_ui():
 	for child in _main_vbox.get_children(): child.queue_free()
