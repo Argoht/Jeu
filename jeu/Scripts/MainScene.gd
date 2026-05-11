@@ -6,15 +6,16 @@ extends Control
 @onready var label_end_num = $VBox/VitalsSection/VBox/Vitals/END/Margin/HBox/Val
 @onready var barre_xp  = $VBox/VitalsSection/VBox/XPLine/BarreXP
 @onready var label_lvl = $VBox/VitalsSection/VBox/XPLine/LabelLvl
-@onready var hero_frame  = $VBox/GameZone/VBox/HeroFrame
-@onready var stats_frame = $VBox/GameZone/VBox/StatsFrame
-@onready var inv_panel   = $VBox/GameZone/VBox/InvPanel
+@onready var _personnage_content = $VBox/GameZone/VBox/PersonnageContent
+@onready var hero_frame  = $VBox/GameZone/VBox/PersonnageContent/HeroFrame
+@onready var stats_frame = $VBox/GameZone/VBox/PersonnageContent/StatsFrame
+@onready var inv_panel   = $VBox/GameZone/VBox/PersonnageContent/InvPanel
 @onready var _missions_panel = $VBox/GameZone/VBox/MissionsPanel
-@onready var label_pseudo = $VBox/GameZone/VBox/HeroFrame/Margin/HeroLayout/AvatarCenter/HeaderInfo/Pseudo
-@onready var inv_grid    = $VBox/GameZone/VBox/InvPanel/Margin/VBox/GridZone/Grille
-@onready var page_label  = $VBox/GameZone/VBox/InvPanel/Margin/VBox/Header/PageLabel
-@onready var btn_prev    = $VBox/GameZone/VBox/InvPanel/Margin/VBox/Header/BtnPrev
-@onready var btn_next    = $VBox/GameZone/VBox/InvPanel/Margin/VBox/Header/BtnNext
+@onready var label_pseudo = $VBox/GameZone/VBox/PersonnageContent/HeroFrame/Margin/HeroLayout/AvatarCenter/HeaderInfo/Pseudo
+@onready var inv_grid    = $VBox/GameZone/VBox/PersonnageContent/InvPanel/Margin/VBox/GridZone/Grille
+@onready var page_label  = $VBox/GameZone/VBox/PersonnageContent/InvPanel/Margin/VBox/Header/PageLabel
+@onready var btn_prev    = $VBox/GameZone/VBox/PersonnageContent/InvPanel/Margin/VBox/Header/BtnPrev
+@onready var btn_next    = $VBox/GameZone/VBox/PersonnageContent/InvPanel/Margin/VBox/Header/BtnNext
 
 var current_page: int = 0
 var total_pages:  int = 5
@@ -32,15 +33,15 @@ var _fail_hp_label:    Label = null
 
 # Bug corrigé : "wis" retiré (pas de nœud dédié dans la scène)
 @onready var stats_labels = {
-	"str": get_node_or_null("VBox/GameZone/VBox/StatsFrame/Margin/StatsGrid/Str/Val"),
-	"dex": get_node_or_null("VBox/GameZone/VBox/StatsFrame/Margin/StatsGrid/Dex/Val"),
-	"int": get_node_or_null("VBox/GameZone/VBox/StatsFrame/Margin/StatsGrid/Int/Val"),
-	"vit": get_node_or_null("VBox/GameZone/VBox/StatsFrame/Margin/StatsGrid/Vit/Val"),
-	"wil": get_node_or_null("VBox/GameZone/VBox/StatsFrame/Margin/StatsGrid/Wil/Val"),
-	"per": get_node_or_null("VBox/GameZone/VBox/StatsFrame/Margin/StatsGrid/Per/Val"),
-	"cha": get_node_or_null("VBox/GameZone/VBox/StatsFrame/Margin/StatsGrid/Cha/Val"),
-	"atk": get_node_or_null("VBox/GameZone/VBox/StatsFrame/Margin/StatsGrid/Atk/Val"),
-	"def": get_node_or_null("VBox/GameZone/VBox/StatsFrame/Margin/StatsGrid/Def/Val")
+	"str": get_node_or_null("VBox/GameZone/VBox/PersonnageContent/StatsFrame/Margin/StatsGrid/Str/Val"),
+	"dex": get_node_or_null("VBox/GameZone/VBox/PersonnageContent/StatsFrame/Margin/StatsGrid/Dex/Val"),
+	"int": get_node_or_null("VBox/GameZone/VBox/PersonnageContent/StatsFrame/Margin/StatsGrid/Int/Val"),
+	"vit": get_node_or_null("VBox/GameZone/VBox/PersonnageContent/StatsFrame/Margin/StatsGrid/Vit/Val"),
+	"wil": get_node_or_null("VBox/GameZone/VBox/PersonnageContent/StatsFrame/Margin/StatsGrid/Wil/Val"),
+	"per": get_node_or_null("VBox/GameZone/VBox/PersonnageContent/StatsFrame/Margin/StatsGrid/Per/Val"),
+	"cha": get_node_or_null("VBox/GameZone/VBox/PersonnageContent/StatsFrame/Margin/StatsGrid/Cha/Val"),
+	"atk": get_node_or_null("VBox/GameZone/VBox/PersonnageContent/StatsFrame/Margin/StatsGrid/Atk/Val"),
+	"def": get_node_or_null("VBox/GameZone/VBox/PersonnageContent/StatsFrame/Margin/StatsGrid/Def/Val")
 }
 
 func _ready():
@@ -126,11 +127,11 @@ func _change_page(step: int):
 
 func _on_nav_pressed(tab_name: String):
 	if tab_name == "Missions":
-		hero_frame.hide(); stats_frame.hide(); inv_panel.hide()
+		_personnage_content.hide()
 		_missions_panel.show()
 	else:
 		_missions_panel.hide()
-		hero_frame.show(); stats_frame.show(); inv_panel.show()
+		_personnage_content.show()
 		update_ui()
 
 # ---------------------------------------------------------------------------
@@ -402,7 +403,7 @@ func _build_fail_popup() -> Control:
 # ---------------------------------------------------------------------------
 
 func _add_rename_button():
-	var header_info = $VBox/GameZone/VBox/HeroFrame/Margin/HeroLayout/AvatarCenter/HeaderInfo
+	var header_info = $VBox/GameZone/VBox/PersonnageContent/HeroFrame/Margin/HeroLayout/AvatarCenter/HeaderInfo
 
 	# Crée un HBox centré pour mettre le pseudo et le bouton côte à côte
 	var hbox = HBoxContainer.new()
