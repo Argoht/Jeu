@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="MissionData" format=3 uid="uid://a0612km"]
+
+[ext_resource type="Script" uid="uid://7q6sivsis1nj" path="res://Scripts/MissionData.gd" id="1_a0612"]
+
+[resource]
+script = ExtResource("1_a0612")
+id = "a_12km"
+title = "Souffle Inépuisable"
+description = "Courir 12 km."
+rank = 5
+req_end = 45
+base_xp = 6000
+reward_stat = 3
+reward_stat_amount = 2

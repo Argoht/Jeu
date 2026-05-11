@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="MissionData" format=3 uid="uid://a1390mn"]
+
+[ext_resource type="Script" uid="uid://7q6sivsis1nj" path="res://Scripts/MissionData.gd" id="1_a1390"]
+
+[resource]
+script = ExtResource("1_a1390")
+id = "a_90min"
+title = "Corps en Surcharge"
+description = "Faire 90 minutes d'activité physique continue."
+rank = 5
+req_end = 48
+base_xp = 6500
+reward_stat = 3
+reward_stat_amount = 3

@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="MissionData" format=3 uid="uid://c12reac"]
+
+[ext_resource type="Script" uid="uid://7q6sivsis1nj" path="res://Scripts/MissionData.gd" id="1_c12rc"]
+
+[resource]
+script = ExtResource("1_c12rc")
+id = "c_reaction"
+title = "Réaction Instantanée"
+description = "Faire un entraînement d'agilité de 20 minutes."
+rank = 3
+req_dex = 15
+base_xp = 1200
+reward_stat = 2
+reward_stat_amount = 1
