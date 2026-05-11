@@ -1025,4 +1025,5 @@ theme_override_styles/panel = SubResource("StyleBoxFlat_inv_slot")
 [node name="MissionsPanel" parent="VBox/GameZone/VBox" instance=ExtResource("missions_scene")]
 visible = false
 layout_mode = 2
+size_flags_horizontal = 3
 size_flags_vertical = 3
