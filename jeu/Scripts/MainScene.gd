@@ -410,17 +410,18 @@ func _add_rename_button():
 	var header_info = $VBox/GameZone/VBox/HeroFrame/Margin/HeroLayout/AvatarCenter/HeaderInfo
 	var btn = Button.new()
 	btn.text = "✎"
-	btn.add_theme_font_size_override("font_size", 13)
+	btn.custom_minimum_size = Vector2(28, 18)
+	btn.add_theme_font_size_override("font_size", 10)
 	btn.add_theme_color_override("font_color", Color("#00f2ff"))
 	var s = StyleBoxFlat.new()
 	s.bg_color = Color(0, 0, 0, 0)
 	s.border_width_left = 1; s.border_width_top = 1
 	s.border_width_right = 1; s.border_width_bottom = 1
 	s.border_color = Color("#00f2ff")
-	s.corner_radius_top_left = 4; s.corner_radius_top_right = 4
-	s.corner_radius_bottom_left = 4; s.corner_radius_bottom_right = 4
-	s.content_margin_left = 6; s.content_margin_right = 6
-	s.content_margin_top = 2; s.content_margin_bottom = 2
+	s.corner_radius_top_left = 3; s.corner_radius_top_right = 3
+	s.corner_radius_bottom_left = 3; s.corner_radius_bottom_right = 3
+	s.content_margin_left = 3; s.content_margin_right = 3
+	s.content_margin_top = 1; s.content_margin_bottom = 1
 	btn.add_theme_stylebox_override("normal", s)
 	btn.pressed.connect(_open_rename_popup)
 	header_info.add_child(btn)
