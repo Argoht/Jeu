@@ -70,6 +70,8 @@ func _ready() -> void:
 	GlobalEngine.inventory_changed.connect(update_inventory_display)
 	update_ui()
 
+	_build_debug_bar()
+
 # ── Navigation ────────────────────────────────────────────────────────────────
 
 func _on_nav_pressed(tab_name: String) -> void:
@@ -144,12 +146,15 @@ func update_inventory_display() -> void:
 			var btn := Button.new()
 			btn.text = _type_icon(item.get("type", ""))
 			btn.flat = true
-			btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-			btn.size_flags_vertical   = Control.SIZE_EXPAND_FILL
+			btn.alignment = HORIZONTAL_ALIGNMENT_CENTER
 			btn.add_theme_font_size_override("font_size", 22)
 			btn.add_theme_color_override("font_color", _rarity_color(item.get("rarity", "common")))
 			btn.pressed.connect(_popup_manager.show_item_details.bind(item))
 			slot.add_child(btn)
+			# Fait remplir le slot après add_child (sinon les ancres n'ont pas de parent)
+			btn.set_anchors_preset(Control.PRESET_FULL_RECT)
+			btn.offset_left = 0; btn.offset_top = 0
+			btn.offset_right = 0; btn.offset_bottom = 0
 
 ## Couleur d'affichage par rareté (aligné sur ItemData.get_rarity_color).
 func _rarity_color(rarity: String) -> Color:
@@ -199,4 +204,50 @@ func _add_rename_button() -> void:
 	btn.add_theme_stylebox_override("normal", s)
 	btn.pressed.connect(_popup_manager.show_rename)
 	hbox.add_child(btn)
+
+# ── Debug bar ─────────────────────────────────────────────────────────────────
+
+func _build_debug_bar() -> void:
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0.15, 0.0, 0.0, 0.85)
+	style.border_width_bottom = 1
+	style.border_color = Color("#ff3333")
+
+	var panel := PanelContainer.new()
+	panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	panel.add_theme_stylebox_override("panel", style)
+
+	var margin := MarginContainer.new()
+	for side in ["margin_left", "margin_right", "margin_top", "margin_bottom"]:
+		margin.add_theme_constant_override(side, 6)
+	panel.add_child(margin)
+
+	var bar := HBoxContainer.new()
+	bar.add_theme_constant_override("separation", 6)
+	margin.add_child(bar)
+
+	var lbl := Label.new()
+	lbl.text = "⚙ DEBUG"
+	lbl.add_theme_color_override("font_color", Color("#ff3333"))
+	lbl.add_theme_font_size_override("font_size", 11)
+	bar.add_child(lbl)
+
+	var spacer := Control.new()
+	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	bar.add_child(spacer)
+
+	for btn_data in [
+		["Reset Quotidien", func(): GlobalEngine.debug_reset_daily()],
+		["Reset Hebdo",     func(): GlobalEngine.debug_reset_weekly()],
+		["+ Niveau",        func(): GlobalEngine.debug_add_level()],
+		["+ Loot",          func(): GlobalEngine.debug_add_loot()],
+	]:
+		var b := Button.new()
+		b.text = btn_data[0]
+		b.add_theme_font_size_override("font_size", 11)
+		b.pressed.connect(btn_data[1])
+		bar.add_child(b)
+
+	$VBox.add_child(panel)
+	$VBox.move_child(panel, 0)
 

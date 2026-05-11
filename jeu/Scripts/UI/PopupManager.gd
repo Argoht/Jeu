@@ -1,9 +1,14 @@
 class_name PopupManager
-extends Control
+extends CanvasLayer
 
-## Manages all game popups (level-up, mission result, rename).
-## Add as a child of the root Control. Connects to GlobalEngine signals
-## automatically in _ready() so MainScene needs zero popup logic.
+## Manages all game popups (level-up, mission result, rename, item details).
+##
+## Extends CanvasLayer so that popup overlays use viewport-space coordinates
+## directly — guarantees they fill the screen and center correctly regardless
+## of where MainScene puts the PopupManager in the scene tree.
+##
+## Add as a child of any node. Connects to GlobalEngine signals automatically
+## in _ready() so MainScene needs zero popup logic.
 
 # ── Signals ───────────────────────────────────────────────────────────────────
 
@@ -34,9 +39,8 @@ var _item_border_style: StyleBoxFlat   # change de couleur selon la rareté
 # ── Lifecycle ─────────────────────────────────────────────────────────────────
 
 func _ready() -> void:
-	set_anchors_preset(Control.PRESET_FULL_RECT)
-	mouse_filter = Control.MOUSE_FILTER_IGNORE
-	z_index = 100
+	# Couche élevée → s'affiche au-dessus de toute l'UI du jeu.
+	layer = 100
 
 	_lvl_popup     = _build_level_up_popup()
 	_mission_popup = _build_mission_popup()
@@ -140,10 +144,11 @@ func _type_label(item_type: String) -> String:
 # ── Popup builders ────────────────────────────────────────────────────────────
 
 func _make_popup_base(border_color: Color) -> Array:
+	# Le parent (PopupManager) est un CanvasLayer → PRESET_FULL_RECT place
+	# l'overlay aux coordonnées viewport, donc plein écran et bien centré.
 	var overlay := Control.new()
 	overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
 	overlay.mouse_filter = Control.MOUSE_FILTER_STOP
-	overlay.z_index = 100
 
 	var bg := ColorRect.new()
 	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
