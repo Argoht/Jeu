@@ -30,6 +30,7 @@ func _display_missions_list():
 
 	var t_daily = Label.new()
 	t_daily.name = "TimerDaily"
+	t_daily.text = "↻ Quotidien : " + GlobalEngine.get_time_string()
 	t_daily.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	t_daily.add_theme_color_override("font_color", Color("#00f2ff"))
 	t_daily.add_theme_font_size_override("font_size", 13)
@@ -37,6 +38,7 @@ func _display_missions_list():
 
 	var t_weekly = Label.new()
 	t_weekly.name = "TimerWeekly"
+	t_weekly.text = "↻ Hebdo : " + GlobalEngine.get_weekly_time_string()
 	t_weekly.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	t_weekly.add_theme_color_override("font_color", Color("#d15cff"))
 	t_weekly.add_theme_font_size_override("font_size", 13)
