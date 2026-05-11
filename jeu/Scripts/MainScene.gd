@@ -21,6 +21,9 @@ const MISSIONS_SCENE = preload("res://Scenes/MissionsUI.tscn")
 var current_page: int = 0
 var total_pages:  int = 5
 
+# Missions panel (permanent, toggled like the other panels)
+var _missions_panel: Control = null
+
 # Popups
 var _lvl_popup:      Control = null
 var _mission_popup:  Control = null
@@ -61,6 +64,13 @@ func _ready():
 	_rename_popup = _build_rename_popup()
 	add_child(_rename_popup)
 	_add_rename_button()
+
+	# MissionsUI créé une fois et gardé permanent (comme HeroFrame/StatsFrame/InvPanel)
+	_missions_panel = MISSIONS_SCENE.instantiate()
+	_missions_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_missions_panel.size_flags_vertical   = Control.SIZE_EXPAND_FILL
+	game_zone_vbox.add_child(_missions_panel)
+	_missions_panel.hide()
 
 	if is_instance_valid(GlobalEngine):
 		GlobalEngine.stats_updated.connect(update_ui)
@@ -127,17 +137,11 @@ func _change_page(step: int):
 	update_inventory_display()
 
 func _on_nav_pressed(tab_name: String):
-	for child in game_zone_vbox.get_children():
-		if child.name not in ["HeroFrame", "StatsFrame", "InvPanel"]:
-			child.queue_free()
-
 	if tab_name == "Missions":
 		hero_frame.hide(); stats_frame.hide(); inv_panel.hide()
-		var missions_inst = MISSIONS_SCENE.instantiate()
-		missions_inst.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		missions_inst.size_flags_vertical   = Control.SIZE_EXPAND_FILL
-		game_zone_vbox.add_child(missions_inst)
+		_missions_panel.show()
 	else:
+		_missions_panel.hide()
 		hero_frame.show(); stats_frame.show(); inv_panel.show()
 		update_ui()
 
