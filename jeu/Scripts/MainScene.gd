@@ -21,6 +21,9 @@ const MISSIONS_SCENE = preload("res://Scenes/MissionsUI.tscn")
 var current_page: int = 0
 var total_pages:  int = 5
 
+# Missions panel (permanent, toggled like the other panels)
+var _missions_panel: Control = null
+
 # Popups
 var _lvl_popup:      Control = null
 var _mission_popup:  Control = null
@@ -61,6 +64,13 @@ func _ready():
 	_rename_popup = _build_rename_popup()
 	add_child(_rename_popup)
 	_add_rename_button()
+
+	# MissionsUI créé une fois et gardé permanent (comme HeroFrame/StatsFrame/InvPanel)
+	_missions_panel = MISSIONS_SCENE.instantiate()
+	_missions_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_missions_panel.size_flags_vertical   = Control.SIZE_EXPAND_FILL
+	game_zone_vbox.add_child(_missions_panel)
+	_missions_panel.hide()
 
 	if is_instance_valid(GlobalEngine):
 		GlobalEngine.stats_updated.connect(update_ui)
@@ -127,16 +137,19 @@ func _change_page(step: int):
 	update_inventory_display()
 
 func _on_nav_pressed(tab_name: String):
-	for child in game_zone_vbox.get_children():
-		if child.name not in ["HeroFrame", "StatsFrame", "InvPanel"]:
-			child.queue_free()
-
 	if tab_name == "Missions":
 		hero_frame.hide(); stats_frame.hide(); inv_panel.hide()
-		game_zone_vbox.add_child(MISSIONS_SCENE.instantiate())
+		_missions_panel.show()
 	else:
+		_missions_panel.hide()
 		hero_frame.show(); stats_frame.show(); inv_panel.show()
 		update_ui()
+	await get_tree().process_frame
+	var nav = $VBox/Nav
+	var vbox = $VBox
+	print("[NAV] tab=%s | VBox.size=%s | Nav.size=%s | Nav.pos=%s | GameZone.size=%s" % [
+		tab_name, vbox.size, nav.size, nav.position, $VBox/GameZone.size
+	])
 
 # ---------------------------------------------------------------------------
 # UI update
@@ -408,22 +421,34 @@ func _build_fail_popup() -> Control:
 
 func _add_rename_button():
 	var header_info = $VBox/GameZone/VBox/HeroFrame/Margin/HeroLayout/AvatarCenter/HeaderInfo
+
+	# Crée un HBox centré pour mettre le pseudo et le bouton côte à côte
+	var hbox = HBoxContainer.new()
+	hbox.alignment = BoxContainer.ALIGNMENT_CENTER
+	hbox.add_theme_constant_override("separation", 8)
+	header_info.add_child(hbox)
+	header_info.move_child(hbox, 0)
+
+	# Déplace le label pseudo dans le hbox
+	label_pseudo.reparent(hbox)
+
 	var btn = Button.new()
 	btn.text = "✎"
-	btn.add_theme_font_size_override("font_size", 13)
+	btn.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	btn.add_theme_font_size_override("font_size", 10)
 	btn.add_theme_color_override("font_color", Color("#00f2ff"))
 	var s = StyleBoxFlat.new()
 	s.bg_color = Color(0, 0, 0, 0)
 	s.border_width_left = 1; s.border_width_top = 1
 	s.border_width_right = 1; s.border_width_bottom = 1
 	s.border_color = Color("#00f2ff")
-	s.corner_radius_top_left = 4; s.corner_radius_top_right = 4
-	s.corner_radius_bottom_left = 4; s.corner_radius_bottom_right = 4
-	s.content_margin_left = 6; s.content_margin_right = 6
-	s.content_margin_top = 2; s.content_margin_bottom = 2
+	s.corner_radius_top_left = 3; s.corner_radius_top_right = 3
+	s.corner_radius_bottom_left = 3; s.corner_radius_bottom_right = 3
+	s.content_margin_left = 4; s.content_margin_right = 4
+	s.content_margin_top = 1; s.content_margin_bottom = 1
 	btn.add_theme_stylebox_override("normal", s)
 	btn.pressed.connect(_open_rename_popup)
-	header_info.add_child(btn)
+	hbox.add_child(btn)
 
 func _build_rename_popup() -> Control:
 	var parts     = _make_popup_base(Color("#00f2ff"))
@@ -440,7 +465,7 @@ func _build_rename_popup() -> Control:
 	_rename_input = LineEdit.new()
 	_rename_input.max_length = 20
 	_rename_input.placeholder_text = "Ton pseudo..."
-	_rename_input.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_rename_input.alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_rename_input.add_theme_font_size_override("font_size", 18)
 	vbox.add_child(_rename_input)
 
