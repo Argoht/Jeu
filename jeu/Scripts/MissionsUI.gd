@@ -3,7 +3,6 @@ extends MarginContainer
 var _vbox: VBoxContainer
 var _timer_acc: float = 0.0
 
-const DAILY_CARD_W := 200
 
 func _ready():
 	size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -45,7 +44,15 @@ func _display_missions_list():
 	_vbox.add_child(t_weekly)
 
 	_add_section_header("MISSIONS QUOTIDIENNES", Color("#00f2ff"))
-	_vbox.add_child(_build_daily_carousel())
+	if GlobalEngine.available_missions.is_empty():
+		var empty = Label.new()
+		empty.text = "Missions épuisées."
+		empty.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		empty.add_theme_color_override("font_color", Color("#555555"))
+		_vbox.add_child(empty)
+	else:
+		for m in GlobalEngine.available_missions:
+			_vbox.add_child(_create_card(m, false))
 
 	_add_section_header("MISSION HEBDOMADAIRE", Color("#d15cff"))
 	if GlobalEngine.available_weekly_missions.is_empty():
@@ -56,28 +63,8 @@ func _display_missions_list():
 		_vbox.add_child(empty)
 	else:
 		for m in GlobalEngine.available_weekly_missions:
-			_vbox.add_child(_create_card(m, true, 0))
+			_vbox.add_child(_create_card(m, true))
 
-func _build_daily_carousel() -> ScrollContainer:
-	var hscroll = ScrollContainer.new()
-	hscroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	hscroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	hscroll.scroll_horizontal_custom_step = DAILY_CARD_W
-
-	var hbox = HBoxContainer.new()
-	hbox.add_theme_constant_override("separation", 10)
-	hscroll.add_child(hbox)
-
-	if GlobalEngine.available_missions.is_empty():
-		var empty = Label.new()
-		empty.text = "Missions épuisées."
-		empty.add_theme_color_override("font_color", Color("#555555"))
-		hbox.add_child(empty)
-	else:
-		for m in GlobalEngine.available_missions:
-			hbox.add_child(_create_card(m, false, DAILY_CARD_W))
-
-	return hscroll
 
 func _add_section_header(text: String, color: Color):
 	_vbox.add_child(HSeparator.new())
@@ -88,13 +75,10 @@ func _add_section_header(text: String, color: Color):
 	l.add_theme_font_size_override("font_size", 13)
 	_vbox.add_child(l)
 
-func _create_card(m_dict: Dictionary, is_weekly: bool, card_width: int) -> PanelContainer:
+func _create_card(m_dict: Dictionary, is_weekly: bool) -> PanelContainer:
 	var m_data = GlobalEngine.all_missions.get(m_dict.id)
 	var card = PanelContainer.new()
-	if card_width > 0:
-		card.custom_minimum_size = Vector2(card_width, 0)
-	else:
-		card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 
 	if not m_data:
 		return card
@@ -131,7 +115,7 @@ func _create_card(m_dict: Dictionary, is_weekly: bool, card_width: int) -> Panel
 	var title = Label.new()
 	title.text = m_data.title.to_upper()
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	title.add_theme_font_size_override("font_size", 13 if card_width > 0 else 16)
+	title.add_theme_font_size_override("font_size", 16)
 	title.add_theme_color_override("font_color", Color("#00f2ff") if not is_weekly else Color("#d15cff"))
 	title.autowrap_mode = TextServer.AUTOWRAP_WORD
 	v.add_child(title)
@@ -140,7 +124,7 @@ func _create_card(m_dict: Dictionary, is_weekly: bool, card_width: int) -> Panel
 	desc.text = m_data.description
 	desc.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	desc.autowrap_mode = TextServer.AUTOWRAP_WORD
-	desc.add_theme_font_size_override("font_size", 11 if card_width > 0 else 13)
+	desc.add_theme_font_size_override("font_size", 13)
 	desc.add_theme_color_override("font_color", Color(0.68, 0.68, 0.68))
 	v.add_child(desc)
 
