@@ -70,8 +70,6 @@ func _ready() -> void:
 	GlobalEngine.inventory_changed.connect(update_inventory_display)
 	update_ui()
 
-	_build_debug_bar()
-
 # ── Navigation ────────────────────────────────────────────────────────────────
 
 func _on_nav_pressed(tab_name: String) -> void:
@@ -143,13 +141,15 @@ func update_inventory_display() -> void:
 		var item_idx := start_idx + i
 		if item_idx < GlobalEngine.inventory.size():
 			var item: Dictionary = GlobalEngine.inventory[item_idx]
-			var lbl := Label.new()
-			lbl.text = item["name"].substr(0, 5)
-			lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-			lbl.vertical_alignment   = VERTICAL_ALIGNMENT_CENTER
-			lbl.add_theme_font_size_override("font_size", 10)
-			lbl.add_theme_color_override("font_color", _rarity_color(item.get("rarity", "common")))
-			slot.add_child(lbl)
+			var btn := Button.new()
+			btn.text = _type_icon(item.get("type", ""))
+			btn.flat = true
+			btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			btn.size_flags_vertical   = Control.SIZE_EXPAND_FILL
+			btn.add_theme_font_size_override("font_size", 22)
+			btn.add_theme_color_override("font_color", _rarity_color(item.get("rarity", "common")))
+			btn.pressed.connect(_popup_manager.show_item_details.bind(item))
+			slot.add_child(btn)
 
 ## Couleur d'affichage par rareté (aligné sur ItemData.get_rarity_color).
 func _rarity_color(rarity: String) -> Color:
@@ -160,6 +160,14 @@ func _rarity_color(rarity: String) -> Color:
 		"legendary": return Color("#ffd700")
 		"mythic":    return Color("#ff4444")
 	return Color("#aaaaaa")
+
+## Glyphe Unicode représentant le type d'objet (placeholder en attendant les sprites).
+func _type_icon(item_type: String) -> String:
+	match item_type:
+		"weapon":    return "⚔"
+		"armor":     return "🛡"
+		"accessory": return "💍"
+	return "◆"
 
 # ── Rename button ─────────────────────────────────────────────────────────────
 
@@ -192,48 +200,3 @@ func _add_rename_button() -> void:
 	btn.pressed.connect(_popup_manager.show_rename)
 	hbox.add_child(btn)
 
-# ── Debug bar ─────────────────────────────────────────────────────────────────
-
-func _build_debug_bar() -> void:
-	var style := StyleBoxFlat.new()
-	style.bg_color = Color(0.15, 0.0, 0.0, 0.85)
-	style.border_width_bottom = 1
-	style.border_color = Color("#ff3333")
-
-	var panel := PanelContainer.new()
-	panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	panel.add_theme_stylebox_override("panel", style)
-
-	var margin := MarginContainer.new()
-	for side in ["margin_left", "margin_right", "margin_top", "margin_bottom"]:
-		margin.add_theme_constant_override(side, 6)
-	panel.add_child(margin)
-
-	var bar := HBoxContainer.new()
-	bar.add_theme_constant_override("separation", 6)
-	margin.add_child(bar)
-
-	var lbl := Label.new()
-	lbl.text = "⚙ DEBUG"
-	lbl.add_theme_color_override("font_color", Color("#ff3333"))
-	lbl.add_theme_font_size_override("font_size", 11)
-	bar.add_child(lbl)
-
-	var spacer := Control.new()
-	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	bar.add_child(spacer)
-
-	for btn_data in [
-		["Reset Quotidien", func(): GlobalEngine.debug_reset_daily()],
-		["Reset Hebdo",     func(): GlobalEngine.debug_reset_weekly()],
-		["+ Niveau",        func(): GlobalEngine.debug_add_level()],
-		["+ Loot",          func(): GlobalEngine.debug_add_loot()],
-	]:
-		var b := Button.new()
-		b.text = btn_data[0]
-		b.add_theme_font_size_override("font_size", 11)
-		b.pressed.connect(btn_data[1])
-		bar.add_child(b)
-
-	$VBox.add_child(panel)
-	$VBox.move_child(panel, 0)

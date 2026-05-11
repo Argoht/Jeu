@@ -16,12 +16,20 @@ var _lvl_popup:     Control
 var _mission_popup: Control
 var _fail_popup:    Control
 var _rename_popup:  Control
+var _item_popup:    Control
 
 var _lvl_num_label:   Label
 var _miss_xp_label:   Label
 var _miss_stat_label: Label
 var _fail_hp_label:   Label
 var _rename_input:    LineEdit
+
+var _item_name_label:   Label
+var _item_type_label:   Label
+var _item_rarity_label: Label
+var _item_power_label:  Label
+var _item_stats_vbox:   VBoxContainer
+var _item_border_style: StyleBoxFlat   # change de couleur selon la rareté
 
 # ── Lifecycle ─────────────────────────────────────────────────────────────────
 
@@ -34,11 +42,13 @@ func _ready() -> void:
 	_mission_popup = _build_mission_popup()
 	_fail_popup    = _build_fail_popup()
 	_rename_popup  = _build_rename_popup()
+	_item_popup    = _build_item_details_popup()
 
 	add_child(_lvl_popup)
 	add_child(_mission_popup)
 	add_child(_fail_popup)
 	add_child(_rename_popup)
+	add_child(_item_popup)
 
 	GlobalEngine.leveled_up.connect(show_level_up)
 	GlobalEngine.mission_completed.connect(show_mission_complete)
@@ -68,6 +78,64 @@ func show_rename() -> void:
 	_rename_input.select_all()
 	_rename_popup.show()
 	_rename_input.grab_focus()
+
+## Displays full info for an item: name, rarity, type, power, stat bonuses.
+func show_item_details(item: Dictionary) -> void:
+	var rarity: String = item.get("rarity", "common")
+	var rarity_color: Color = _rarity_color(rarity)
+
+	_item_border_style.border_color = rarity_color
+	_item_border_style.shadow_color = Color(rarity_color.r, rarity_color.g, rarity_color.b, 0.35)
+
+	_item_name_label.text = String(item.get("name", "?")).to_upper()
+	_item_name_label.add_theme_color_override("font_color", rarity_color)
+
+	_item_type_label.text = _type_label(item.get("type", ""))
+
+	_item_rarity_label.text = _rarity_label(rarity)
+	_item_rarity_label.add_theme_color_override("font_color", rarity_color)
+
+	_item_power_label.text = "Puissance : %d" % int(item.get("base_power", 0))
+
+	# Reconstruit la liste des stat bonuses
+	for c in _item_stats_vbox.get_children(): c.queue_free()
+	var bonuses: Dictionary = item.get("stat_bonuses", {})
+	for stat_key in bonuses:
+		var line := Label.new()
+		line.text = "+ %d %s" % [int(bonuses[stat_key]), String(stat_key).to_upper()]
+		line.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		line.add_theme_color_override("font_color", Color("#00ff88"))
+		line.add_theme_font_size_override("font_size", 14)
+		_item_stats_vbox.add_child(line)
+
+	_item_popup.show()
+
+# ── Helpers ───────────────────────────────────────────────────────────────────
+
+func _rarity_color(rarity: String) -> Color:
+	match rarity:
+		"common":    return Color("#aaaaaa")
+		"rare":      return Color("#00f2ff")
+		"epic":      return Color("#cc44ff")
+		"legendary": return Color("#ffd700")
+		"mythic":    return Color("#ff4444")
+	return Color("#aaaaaa")
+
+func _rarity_label(rarity: String) -> String:
+	match rarity:
+		"common":    return "Commun"
+		"rare":      return "Rare"
+		"epic":      return "Épique"
+		"legendary": return "Légendaire"
+		"mythic":    return "Mythique"
+	return rarity.capitalize()
+
+func _type_label(item_type: String) -> String:
+	match item_type:
+		"weapon":    return "Arme"
+		"armor":     return "Armure"
+		"accessory": return "Accessoire"
+	return item_type.capitalize()
 
 # ── Popup builders ────────────────────────────────────────────────────────────
 
@@ -122,7 +190,9 @@ func _make_popup_base(border_color: Color) -> Array:
 	btn_style.content_margin_left  = 30; btn_style.content_margin_right = 30
 	btn_style.content_margin_top   = 10; btn_style.content_margin_bottom = 10
 
-	return [overlay, vbox, btn_style]
+	# 4e élément: le StyleBoxFlat du panneau, utile pour changer la bordure
+	# dynamiquement (ex: popup détails item selon la rareté).
+	return [overlay, vbox, btn_style, style]
 
 func _build_level_up_popup() -> Control:
 	var parts     := _make_popup_base(Color("#ffd700"))
@@ -295,3 +365,52 @@ func _confirm_rename(overlay: Control) -> void:
 		GlobalEngine.stats_updated.emit()
 		player_renamed.emit(new_name)
 	overlay.hide()
+
+func _build_item_details_popup() -> Control:
+	# La couleur de bordure initiale est neutre ; show_item_details la modifie
+	# selon la rareté de l'item affiché.
+	var parts := _make_popup_base(Color("#aaaaaa"))
+	var overlay   := parts[0] as Control
+	var vbox      := parts[1] as VBoxContainer
+	var btn_style := parts[2] as StyleBoxFlat
+	_item_border_style = parts[3] as StyleBoxFlat
+
+	_item_name_label = Label.new()
+	_item_name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_item_name_label.add_theme_font_size_override("font_size", 22)
+	_item_name_label.autowrap_mode = TextServer.AUTOWRAP_WORD
+	vbox.add_child(_item_name_label)
+
+	vbox.add_child(HSeparator.new())
+
+	_item_type_label = Label.new()
+	_item_type_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_item_type_label.add_theme_color_override("font_color", Color(0.75, 0.75, 0.75))
+	_item_type_label.add_theme_font_size_override("font_size", 13)
+	vbox.add_child(_item_type_label)
+
+	_item_rarity_label = Label.new()
+	_item_rarity_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_item_rarity_label.add_theme_font_size_override("font_size", 13)
+	vbox.add_child(_item_rarity_label)
+
+	vbox.add_child(HSeparator.new())
+
+	_item_power_label = Label.new()
+	_item_power_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_item_power_label.add_theme_color_override("font_color", Color("#ffd700"))
+	_item_power_label.add_theme_font_size_override("font_size", 16)
+	vbox.add_child(_item_power_label)
+
+	_item_stats_vbox = VBoxContainer.new()
+	_item_stats_vbox.add_theme_constant_override("separation", 4)
+	vbox.add_child(_item_stats_vbox)
+
+	var btn := Button.new()
+	btn.text = "FERMER"
+	btn.add_theme_stylebox_override("normal", btn_style)
+	btn.pressed.connect(overlay.hide)
+	vbox.add_child(btn)
+
+	overlay.hide()
+	return overlay
