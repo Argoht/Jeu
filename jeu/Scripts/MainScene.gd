@@ -133,6 +133,17 @@ func _on_nav_pressed(tab_name: String):
 		_missions_panel.hide()
 		_personnage_content.show()
 		update_ui()
+	await get_tree().process_frame
+	var vp = get_viewport().get_visible_rect().size
+	var debug_bar = $VBox.get_child(0)
+	print("[%s] viewport=%s | VBox.pos=%s size=%s | DEBUG.pos=%s size=%s | GameZone.pos=%s size=%s | MissionsPanel.visible=%s pos=%s size=%s | PersonnageContent.visible=%s pos=%s size=%s" % [
+		tab_name, vp,
+		$VBox.position, $VBox.size,
+		debug_bar.position, debug_bar.size,
+		$VBox/GameZone.position, $VBox/GameZone.size,
+		_missions_panel.visible, _missions_panel.position, _missions_panel.size,
+		_personnage_content.visible, _personnage_content.position, _personnage_content.size,
+	])
 
 # ---------------------------------------------------------------------------
 # UI update
