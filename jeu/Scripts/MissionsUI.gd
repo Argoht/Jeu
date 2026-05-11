@@ -1,8 +1,8 @@
 extends MarginContainer
 
-var _vbox: VBoxContainer
+var _main_vbox: VBoxContainer
+var _daily_vbox: VBoxContainer
 var _timer_acc: float = 0.0
-
 
 func _ready():
 	size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -11,29 +11,25 @@ func _ready():
 	add_theme_constant_override("margin_right", 12)
 	add_theme_constant_override("margin_bottom", 20)
 
-	var scroll = ScrollContainer.new()
-	scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	add_child(scroll)
+	_main_vbox = VBoxContainer.new()
+	_main_vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_main_vbox.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_main_vbox.add_theme_constant_override("separation", 14)
+	add_child(_main_vbox)
 
-	_vbox = VBoxContainer.new()
-	_vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_vbox.add_theme_constant_override("separation", 14)
-	scroll.add_child(_vbox)
+	_build_static_ui()
 
-	_display_missions_list()
+func _build_static_ui():
+	for child in _main_vbox.get_children(): child.queue_free()
 
-func _display_missions_list():
-	for child in _vbox.get_children(): child.queue_free()
-
+	# Timers
 	var t_daily = Label.new()
 	t_daily.name = "TimerDaily"
 	t_daily.text = "↻ Quotidien : " + GlobalEngine.get_time_string()
 	t_daily.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	t_daily.add_theme_color_override("font_color", Color("#00f2ff"))
 	t_daily.add_theme_font_size_override("font_size", 13)
-	_vbox.add_child(t_daily)
+	_main_vbox.add_child(t_daily)
 
 	var t_weekly = Label.new()
 	t_weekly.name = "TimerWeekly"
@@ -41,47 +37,63 @@ func _display_missions_list():
 	t_weekly.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	t_weekly.add_theme_color_override("font_color", Color("#d15cff"))
 	t_weekly.add_theme_font_size_override("font_size", 13)
-	_vbox.add_child(t_weekly)
+	_main_vbox.add_child(t_weekly)
 
+	# Section quotidienne avec son propre scroll
 	_add_section_header("MISSIONS QUOTIDIENNES", Color("#00f2ff"))
-	if GlobalEngine.available_missions.is_empty():
-		var empty = Label.new()
-		empty.text = "Missions épuisées."
-		empty.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		empty.add_theme_color_override("font_color", Color("#555555"))
-		_vbox.add_child(empty)
-	else:
-		for m in GlobalEngine.available_missions:
-			_vbox.add_child(_create_card(m, false, 0))
 
+	var daily_scroll = ScrollContainer.new()
+	daily_scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	daily_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	daily_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	_main_vbox.add_child(daily_scroll)
+
+	_daily_vbox = VBoxContainer.new()
+	_daily_vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_daily_vbox.add_theme_constant_override("separation", 10)
+	daily_scroll.add_child(_daily_vbox)
+
+	_refresh_daily_cards()
+
+	# Section hebdomadaire fixe en bas
 	_add_section_header("MISSION HEBDOMADAIRE", Color("#d15cff"))
+
 	if GlobalEngine.available_weekly_missions.is_empty():
 		var empty = Label.new()
 		empty.text = "Aucun défi cette semaine."
 		empty.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		empty.add_theme_color_override("font_color", Color("#555555"))
-		_vbox.add_child(empty)
+		_main_vbox.add_child(empty)
 	else:
 		for m in GlobalEngine.available_weekly_missions:
-			_vbox.add_child(_create_card(m, true, 0))
+			_main_vbox.add_child(_create_card(m, true))
 
+func _refresh_daily_cards():
+	for child in _daily_vbox.get_children(): child.queue_free()
+
+	if GlobalEngine.available_missions.is_empty():
+		var empty = Label.new()
+		empty.text = "Missions épuisées."
+		empty.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		empty.add_theme_color_override("font_color", Color("#555555"))
+		_daily_vbox.add_child(empty)
+	else:
+		for m in GlobalEngine.available_missions:
+			_daily_vbox.add_child(_create_card(m, false))
 
 func _add_section_header(text: String, color: Color):
-	_vbox.add_child(HSeparator.new())
+	_main_vbox.add_child(HSeparator.new())
 	var l = Label.new()
 	l.text = "— " + text + " —"
 	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	l.add_theme_color_override("font_color", color)
 	l.add_theme_font_size_override("font_size", 13)
-	_vbox.add_child(l)
+	_main_vbox.add_child(l)
 
-func _create_card(m_dict: Dictionary, is_weekly: bool, card_width: int) -> PanelContainer:
+func _create_card(m_dict: Dictionary, is_weekly: bool) -> PanelContainer:
 	var m_data = GlobalEngine.all_missions.get(m_dict.id)
 	var card = PanelContainer.new()
-	if card_width > 0:
-		card.custom_minimum_size = Vector2(card_width, 0)
-	else:
-		card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 
 	if not m_data:
 		return card
@@ -158,19 +170,19 @@ func _create_card(m_dict: Dictionary, is_weekly: bool, card_width: int) -> Panel
 				var b = Button.new()
 				b.text = "LANCER — %d END" % m_dict.end_cost
 				b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-				b.pressed.connect(func(): if GlobalEngine.accept_mission(m_dict): _display_missions_list())
+				b.pressed.connect(func(): if GlobalEngine.accept_mission(m_dict): _refresh_daily_cards())
 				btns.add_child(b)
 		"in_progress":
 			var f = Button.new()
 			f.text = "ÉCHEC"
 			f.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 			f.add_theme_color_override("font_color", Color("#ff4444"))
-			f.pressed.connect(func(): GlobalEngine.process_mission_result(m_dict, false); _display_missions_list())
+			f.pressed.connect(func(): GlobalEngine.process_mission_result(m_dict, false); _refresh_daily_cards())
 			var r = Button.new()
 			r.text = "RÉUSSITE"
 			r.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 			r.add_theme_color_override("font_color", Color("#00ff88"))
-			r.pressed.connect(func(): GlobalEngine.process_mission_result(m_dict, true); _display_missions_list())
+			r.pressed.connect(func(): GlobalEngine.process_mission_result(m_dict, true); _refresh_daily_cards())
 			btns.add_child(f)
 			btns.add_child(r)
 		_:
@@ -190,7 +202,7 @@ func _process(delta):
 	_timer_acc += delta
 	if _timer_acc < 1.0: return
 	_timer_acc = 0.0
-	var d = _vbox.get_node_or_null("TimerDaily")
+	var d = _main_vbox.get_node_or_null("TimerDaily")
 	if d: d.text = "↻ Quotidien : " + GlobalEngine.get_time_string()
-	var w = _vbox.get_node_or_null("TimerWeekly")
+	var w = _main_vbox.get_node_or_null("TimerWeekly")
 	if w: w.text = "↻ Hebdo : " + GlobalEngine.get_weekly_time_string()
