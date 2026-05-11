@@ -6,6 +6,8 @@ var _timer_acc: float = 0.0
 const DAILY_CARD_W := 200
 
 func _ready():
+	size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	size_flags_vertical = Control.SIZE_EXPAND_FILL
 	add_theme_constant_override("margin_left", 12)
 	add_theme_constant_override("margin_right", 12)
 	add_theme_constant_override("margin_bottom", 20)
@@ -56,6 +58,7 @@ func _display_missions_list():
 
 func _build_daily_carousel() -> ScrollContainer:
 	var hscroll = ScrollContainer.new()
+	hscroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	hscroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	hscroll.scroll_horizontal_custom_step = DAILY_CARD_W
 
