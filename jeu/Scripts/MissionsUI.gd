@@ -7,9 +7,6 @@ var _timer_acc: float = 0.0
 func _ready():
 	size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	size_flags_vertical = Control.SIZE_EXPAND_FILL
-	add_theme_constant_override("margin_left", 12)
-	add_theme_constant_override("margin_right", 12)
-	add_theme_constant_override("margin_bottom", 20)
 
 	_main_vbox = VBoxContainer.new()
 	_main_vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
