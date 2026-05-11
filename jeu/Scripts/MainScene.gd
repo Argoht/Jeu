@@ -440,7 +440,7 @@ func _build_rename_popup() -> Control:
 	_rename_input = LineEdit.new()
 	_rename_input.max_length = 20
 	_rename_input.placeholder_text = "Ton pseudo..."
-	_rename_input.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_rename_input.alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_rename_input.add_theme_font_size_override("font_size", 18)
 	vbox.add_child(_rename_input)
 
