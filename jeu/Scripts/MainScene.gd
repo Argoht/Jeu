@@ -141,8 +141,8 @@ func update_inventory_display() -> void:
 
 		var item_idx := start_idx + i
 		if item_idx < GlobalEngine.inventory.size():
-			var item := GlobalEngine.inventory[item_idx]
-			var lbl  := Label.new()
+			var item: Dictionary = GlobalEngine.inventory[item_idx]
+			var lbl := Label.new()
 			lbl.text = item["name"].substr(0, 5)
 			lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 			lbl.vertical_alignment   = VERTICAL_ALIGNMENT_CENTER
