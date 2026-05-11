@@ -408,9 +408,20 @@ func _build_fail_popup() -> Control:
 
 func _add_rename_button():
 	var header_info = $VBox/GameZone/VBox/HeroFrame/Margin/HeroLayout/AvatarCenter/HeaderInfo
+
+	# Crée un HBox centré pour mettre le pseudo et le bouton côte à côte
+	var hbox = HBoxContainer.new()
+	hbox.alignment = BoxContainer.ALIGNMENT_CENTER
+	hbox.add_theme_constant_override("separation", 8)
+	header_info.add_child(hbox)
+	header_info.move_child(hbox, 0)
+
+	# Déplace le label pseudo dans le hbox
+	label_pseudo.reparent(hbox)
+
 	var btn = Button.new()
 	btn.text = "✎"
-	btn.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	btn.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	btn.add_theme_font_size_override("font_size", 10)
 	btn.add_theme_color_override("font_color", Color("#00f2ff"))
 	var s = StyleBoxFlat.new()
@@ -424,7 +435,7 @@ func _add_rename_button():
 	s.content_margin_top = 1; s.content_margin_bottom = 1
 	btn.add_theme_stylebox_override("normal", s)
 	btn.pressed.connect(_open_rename_popup)
-	header_info.add_child(btn)
+	hbox.add_child(btn)
 
 func _build_rename_popup() -> Control:
 	var parts     = _make_popup_base(Color("#00f2ff"))
