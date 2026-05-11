@@ -1,6 +1,7 @@
 [gd_scene format=3 uid="uid://hm0j7mlm4xpe"]
 
 [ext_resource type="Script" path="res://Scripts/MainScene.gd" id="script_main"]
+[ext_resource type="Script" uid="uid://dxihhinhq7la2" path="res://Scripts/MissionsUI.gd" id="script_missions"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_btn"]
 content_margin_left = 12.0
@@ -325,6 +326,7 @@ show_percentage = false
 
 [node name="GameZone" type="MarginContainer" parent="VBox" unique_id=1385013127]
 layout_mode = 2
+size_flags_horizontal = 3
 size_flags_vertical = 3
 theme_override_constants/margin_left = 15
 theme_override_constants/margin_right = 15
@@ -334,79 +336,86 @@ theme_override_constants/margin_bottom = 15
 layout_mode = 2
 theme_override_constants/separation = 10
 
-[node name="HeroFrame" type="PanelContainer" parent="VBox/GameZone/VBox" unique_id=990745964]
+[node name="PersonnageContent" type="VBoxContainer" parent="VBox/GameZone/VBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+custom_minimum_size = Vector2(0, 0)
+theme_override_constants/separation = 10
+
+[node name="HeroFrame" type="PanelContainer" parent="VBox/GameZone/VBox/PersonnageContent" unique_id=990745964]
 layout_mode = 2
 size_flags_vertical = 3
 size_flags_stretch_ratio = 1.4
 theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
 
-[node name="Margin" type="MarginContainer" parent="VBox/GameZone/VBox/HeroFrame" unique_id=493417209]
+[node name="Margin" type="MarginContainer" parent="VBox/GameZone/VBox/PersonnageContent/HeroFrame" unique_id=493417209]
 layout_mode = 2
 theme_override_constants/margin_left = 10
 theme_override_constants/margin_top = 10
 theme_override_constants/margin_right = 10
 theme_override_constants/margin_bottom = 10
 
-[node name="HeroLayout" type="HBoxContainer" parent="VBox/GameZone/VBox/HeroFrame/Margin" unique_id=1497070762]
+[node name="HeroLayout" type="HBoxContainer" parent="VBox/GameZone/VBox/PersonnageContent/HeroFrame/Margin" unique_id=1497070762]
 layout_mode = 2
 theme_override_constants/separation = 10
 
-[node name="LeftCol" type="VBoxContainer" parent="VBox/GameZone/VBox/HeroFrame/Margin/HeroLayout" unique_id=1967340418]
+[node name="LeftCol" type="VBoxContainer" parent="VBox/GameZone/VBox/PersonnageContent/HeroFrame/Margin/HeroLayout" unique_id=1967340418]
 layout_mode = 2
 theme_override_constants/separation = 10
 alignment = 1
 
-[node name="Tete" type="Panel" parent="VBox/GameZone/VBox/HeroFrame/Margin/HeroLayout/LeftCol" unique_id=417605913]
+[node name="Tete" type="Panel" parent="VBox/GameZone/VBox/PersonnageContent/HeroFrame/Margin/HeroLayout/LeftCol" unique_id=417605913]
 custom_minimum_size = Vector2(62, 62)
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_inv_slot")
 
-[node name="Cou" type="Panel" parent="VBox/GameZone/VBox/HeroFrame/Margin/HeroLayout/LeftCol" unique_id=2030349297]
+[node name="Cou" type="Panel" parent="VBox/GameZone/VBox/PersonnageContent/HeroFrame/Margin/HeroLayout/LeftCol" unique_id=2030349297]
 custom_minimum_size = Vector2(62, 62)
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_inv_slot")
 
-[node name="Torse" type="Panel" parent="VBox/GameZone/VBox/HeroFrame/Margin/HeroLayout/LeftCol" unique_id=176775027]
+[node name="Torse" type="Panel" parent="VBox/GameZone/VBox/PersonnageContent/HeroFrame/Margin/HeroLayout/LeftCol" unique_id=176775027]
 custom_minimum_size = Vector2(62, 62)
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_inv_slot")
 
-[node name="Jambes" type="Panel" parent="VBox/GameZone/VBox/HeroFrame/Margin/HeroLayout/LeftCol" unique_id=806198672]
+[node name="Jambes" type="Panel" parent="VBox/GameZone/VBox/PersonnageContent/HeroFrame/Margin/HeroLayout/LeftCol" unique_id=806198672]
 custom_minimum_size = Vector2(62, 62)
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_inv_slot")
 
-[node name="Pieds" type="Panel" parent="VBox/GameZone/VBox/HeroFrame/Margin/HeroLayout/LeftCol" unique_id=43032889]
+[node name="Pieds" type="Panel" parent="VBox/GameZone/VBox/PersonnageContent/HeroFrame/Margin/HeroLayout/LeftCol" unique_id=43032889]
 custom_minimum_size = Vector2(62, 62)
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_inv_slot")
 
-[node name="AvatarCenter" type="Control" parent="VBox/GameZone/VBox/HeroFrame/Margin/HeroLayout" unique_id=1352105343]
+[node name="AvatarCenter" type="Control" parent="VBox/GameZone/VBox/PersonnageContent/HeroFrame/Margin/HeroLayout" unique_id=1352105343]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="HeaderInfo" type="VBoxContainer" parent="VBox/GameZone/VBox/HeroFrame/Margin/HeroLayout/AvatarCenter" unique_id=888111222]
+[node name="HeaderInfo" type="VBoxContainer" parent="VBox/GameZone/VBox/PersonnageContent/HeroFrame/Margin/HeroLayout/AvatarCenter" unique_id=888111222]
 layout_mode = 1
 anchors_preset = 10
 anchor_right = 1.0
 grow_horizontal = 2
 theme_override_constants/separation = 0
 
-[node name="Pseudo" type="Label" parent="VBox/GameZone/VBox/HeroFrame/Margin/HeroLayout/AvatarCenter/HeaderInfo" unique_id=888111223]
+[node name="Pseudo" type="Label" parent="VBox/GameZone/VBox/PersonnageContent/HeroFrame/Margin/HeroLayout/AvatarCenter/HeaderInfo" unique_id=888111223]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.9, 0.9, 0.9, 1)
 theme_override_font_sizes/font_size = 22
 text = "SHADOW_HUNTER"
 horizontal_alignment = 1
 
-[node name="Titre" type="Label" parent="VBox/GameZone/VBox/HeroFrame/Margin/HeroLayout/AvatarCenter/HeaderInfo" unique_id=888111224]
+[node name="Titre" type="Label" parent="VBox/GameZone/VBox/PersonnageContent/HeroFrame/Margin/HeroLayout/AvatarCenter/HeaderInfo" unique_id=888111224]
 layout_mode = 2
 theme_override_colors/font_color = Color(0, 0.6, 1, 1)
 theme_override_font_sizes/font_size = 14
 text = "THE ARISEN"
 horizontal_alignment = 1
 
-[node name="Label" type="Label" parent="VBox/GameZone/VBox/HeroFrame/Margin/HeroLayout/AvatarCenter" unique_id=974922293]
+[node name="Label" type="Label" parent="VBox/GameZone/VBox/PersonnageContent/HeroFrame/Margin/HeroLayout/AvatarCenter" unique_id=974922293]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -418,63 +427,63 @@ text = "HERO"
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="RightCol" type="VBoxContainer" parent="VBox/GameZone/VBox/HeroFrame/Margin/HeroLayout" unique_id=975623546]
+[node name="RightCol" type="VBoxContainer" parent="VBox/GameZone/VBox/PersonnageContent/HeroFrame/Margin/HeroLayout" unique_id=975623546]
 layout_mode = 2
 theme_override_constants/separation = 10
 alignment = 1
 
-[node name="Epaules" type="Panel" parent="VBox/GameZone/VBox/HeroFrame/Margin/HeroLayout/RightCol" unique_id=1347205430]
+[node name="Epaules" type="Panel" parent="VBox/GameZone/VBox/PersonnageContent/HeroFrame/Margin/HeroLayout/RightCol" unique_id=1347205430]
 custom_minimum_size = Vector2(62, 62)
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_inv_slot")
 
-[node name="Bras" type="Panel" parent="VBox/GameZone/VBox/HeroFrame/Margin/HeroLayout/RightCol" unique_id=1081859636]
+[node name="Bras" type="Panel" parent="VBox/GameZone/VBox/PersonnageContent/HeroFrame/Margin/HeroLayout/RightCol" unique_id=1081859636]
 custom_minimum_size = Vector2(62, 62)
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_inv_slot")
 
-[node name="Mains" type="Panel" parent="VBox/GameZone/VBox/HeroFrame/Margin/HeroLayout/RightCol" unique_id=1443348350]
+[node name="Mains" type="Panel" parent="VBox/GameZone/VBox/PersonnageContent/HeroFrame/Margin/HeroLayout/RightCol" unique_id=1443348350]
 custom_minimum_size = Vector2(62, 62)
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_inv_slot")
 
-[node name="Anneau1" type="Panel" parent="VBox/GameZone/VBox/HeroFrame/Margin/HeroLayout/RightCol" unique_id=1378422070]
+[node name="Anneau1" type="Panel" parent="VBox/GameZone/VBox/PersonnageContent/HeroFrame/Margin/HeroLayout/RightCol" unique_id=1378422070]
 custom_minimum_size = Vector2(62, 62)
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_inv_slot")
 
-[node name="Anneau2" type="Panel" parent="VBox/GameZone/VBox/HeroFrame/Margin/HeroLayout/RightCol" unique_id=1173133614]
+[node name="Anneau2" type="Panel" parent="VBox/GameZone/VBox/PersonnageContent/HeroFrame/Margin/HeroLayout/RightCol" unique_id=1173133614]
 custom_minimum_size = Vector2(62, 62)
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_inv_slot")
 
-[node name="StatsFrame" type="PanelContainer" parent="VBox/GameZone/VBox" unique_id=1709380980]
+[node name="StatsFrame" type="PanelContainer" parent="VBox/GameZone/VBox/PersonnageContent" unique_id=1709380980]
 layout_mode = 2
 size_flags_vertical = 3
 size_flags_stretch_ratio = 0.8
 theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
 
-[node name="Margin" type="MarginContainer" parent="VBox/GameZone/VBox/StatsFrame" unique_id=792064664]
+[node name="Margin" type="MarginContainer" parent="VBox/GameZone/VBox/PersonnageContent/StatsFrame" unique_id=792064664]
 layout_mode = 2
 theme_override_constants/margin_left = 15
 theme_override_constants/margin_top = 10
 theme_override_constants/margin_right = 15
 theme_override_constants/margin_bottom = 10
 
-[node name="StatsGrid" type="GridContainer" parent="VBox/GameZone/VBox/StatsFrame/Margin" unique_id=35373945]
+[node name="StatsGrid" type="GridContainer" parent="VBox/GameZone/VBox/PersonnageContent/StatsFrame/Margin" unique_id=35373945]
 layout_mode = 2
 size_flags_vertical = 3
 theme_override_constants/h_separation = 15
 theme_override_constants/v_separation = 12
 columns = 3
 
-[node name="Str" type="PanelContainer" parent="VBox/GameZone/VBox/StatsFrame/Margin/StatsGrid" unique_id=601253273]
+[node name="Str" type="PanelContainer" parent="VBox/GameZone/VBox/PersonnageContent/StatsFrame/Margin/StatsGrid" unique_id=601253273]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 theme_override_styles/panel = SubResource("StyleBoxFlat_stat")
 
-[node name="Lab" type="Label" parent="VBox/GameZone/VBox/StatsFrame/Margin/StatsGrid/Str" unique_id=513180856]
+[node name="Lab" type="Label" parent="VBox/GameZone/VBox/PersonnageContent/StatsFrame/Margin/StatsGrid/Str" unique_id=513180856]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 1
@@ -483,7 +492,7 @@ theme_override_font_sizes/font_size = 16
 text = "STR"
 vertical_alignment = 1
 
-[node name="Val" type="Label" parent="VBox/GameZone/VBox/StatsFrame/Margin/StatsGrid/Str" unique_id=1015137554]
+[node name="Val" type="Label" parent="VBox/GameZone/VBox/PersonnageContent/StatsFrame/Margin/StatsGrid/Str" unique_id=1015137554]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 1
@@ -492,13 +501,13 @@ text = "10"
 horizontal_alignment = 2
 vertical_alignment = 1
 
-[node name="Atk" type="PanelContainer" parent="VBox/GameZone/VBox/StatsFrame/Margin/StatsGrid" unique_id=934403728]
+[node name="Atk" type="PanelContainer" parent="VBox/GameZone/VBox/PersonnageContent/StatsFrame/Margin/StatsGrid" unique_id=934403728]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 theme_override_styles/panel = SubResource("StyleBoxFlat_stat")
 
-[node name="Lab" type="Label" parent="VBox/GameZone/VBox/StatsFrame/Margin/StatsGrid/Atk" unique_id=961491877]
+[node name="Lab" type="Label" parent="VBox/GameZone/VBox/PersonnageContent/StatsFrame/Margin/StatsGrid/Atk" unique_id=961491877]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 1
@@ -507,20 +516,20 @@ theme_override_font_sizes/font_size = 16
 text = "ATK"
 vertical_alignment = 1
 
-[node name="Val" type="Label" parent="VBox/GameZone/VBox/StatsFrame/Margin/StatsGrid/Atk" unique_id=523854324]
+[node name="Val" type="Label" parent="VBox/GameZone/VBox/PersonnageContent/StatsFrame/Margin/StatsGrid/Atk" unique_id=523854324]
 layout_mode = 2
 theme_override_font_sizes/font_size = 20
 text = "25"
 horizontal_alignment = 2
 vertical_alignment = 1
 
-[node name="Dex" type="PanelContainer" parent="VBox/GameZone/VBox/StatsFrame/Margin/StatsGrid" unique_id=2029787593]
+[node name="Dex" type="PanelContainer" parent="VBox/GameZone/VBox/PersonnageContent/StatsFrame/Margin/StatsGrid" unique_id=2029787593]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 theme_override_styles/panel = SubResource("StyleBoxFlat_stat")
 
-[node name="Lab" type="Label" parent="VBox/GameZone/VBox/StatsFrame/Margin/StatsGrid/Dex" unique_id=1530516783]
+[node name="Lab" type="Label" parent="VBox/GameZone/VBox/PersonnageContent/StatsFrame/Margin/StatsGrid/Dex" unique_id=1530516783]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 1
@@ -529,7 +538,7 @@ theme_override_font_sizes/font_size = 16
 text = "DEX"
 vertical_alignment = 1
 
-[node name="Val" type="Label" parent="VBox/GameZone/VBox/StatsFrame/Margin/StatsGrid/Dex" unique_id=1099522048]
+[node name="Val" type="Label" parent="VBox/GameZone/VBox/PersonnageContent/StatsFrame/Margin/StatsGrid/Dex" unique_id=1099522048]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 1
@@ -538,13 +547,13 @@ text = "10"
 horizontal_alignment = 2
 vertical_alignment = 1
 
-[node name="Def" type="PanelContainer" parent="VBox/GameZone/VBox/StatsFrame/Margin/StatsGrid" unique_id=1774600375]
+[node name="Def" type="PanelContainer" parent="VBox/GameZone/VBox/PersonnageContent/StatsFrame/Margin/StatsGrid" unique_id=1774600375]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 theme_override_styles/panel = SubResource("StyleBoxFlat_stat")
 
-[node name="Lab" type="Label" parent="VBox/GameZone/VBox/StatsFrame/Margin/StatsGrid/Def" unique_id=1192306430]
+[node name="Lab" type="Label" parent="VBox/GameZone/VBox/PersonnageContent/StatsFrame/Margin/StatsGrid/Def" unique_id=1192306430]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 1
@@ -553,20 +562,20 @@ theme_override_font_sizes/font_size = 16
 text = "DEF"
 vertical_alignment = 1
 
-[node name="Val" type="Label" parent="VBox/GameZone/VBox/StatsFrame/Margin/StatsGrid/Def" unique_id=415686629]
+[node name="Val" type="Label" parent="VBox/GameZone/VBox/PersonnageContent/StatsFrame/Margin/StatsGrid/Def" unique_id=415686629]
 layout_mode = 2
 theme_override_font_sizes/font_size = 20
 text = "15"
 horizontal_alignment = 2
 vertical_alignment = 1
 
-[node name="Int" type="PanelContainer" parent="VBox/GameZone/VBox/StatsFrame/Margin/StatsGrid" unique_id=360711514]
+[node name="Int" type="PanelContainer" parent="VBox/GameZone/VBox/PersonnageContent/StatsFrame/Margin/StatsGrid" unique_id=360711514]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 theme_override_styles/panel = SubResource("StyleBoxFlat_stat")
 
-[node name="Lab" type="Label" parent="VBox/GameZone/VBox/StatsFrame/Margin/StatsGrid/Int" unique_id=701015642]
+[node name="Lab" type="Label" parent="VBox/GameZone/VBox/PersonnageContent/StatsFrame/Margin/StatsGrid/Int" unique_id=701015642]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 1
@@ -575,20 +584,20 @@ theme_override_font_sizes/font_size = 16
 text = "INT"
 vertical_alignment = 1
 
-[node name="Val" type="Label" parent="VBox/GameZone/VBox/StatsFrame/Margin/StatsGrid/Int" unique_id=1035116883]
+[node name="Val" type="Label" parent="VBox/GameZone/VBox/PersonnageContent/StatsFrame/Margin/StatsGrid/Int" unique_id=1035116883]
 layout_mode = 2
 theme_override_font_sizes/font_size = 20
 text = "10"
 horizontal_alignment = 2
 vertical_alignment = 1
 
-[node name="Spd" type="PanelContainer" parent="VBox/GameZone/VBox/StatsFrame/Margin/StatsGrid" unique_id=1863991082]
+[node name="Spd" type="PanelContainer" parent="VBox/GameZone/VBox/PersonnageContent/StatsFrame/Margin/StatsGrid" unique_id=1863991082]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 theme_override_styles/panel = SubResource("StyleBoxFlat_stat")
 
-[node name="Lab" type="Label" parent="VBox/GameZone/VBox/StatsFrame/Margin/StatsGrid/Spd" unique_id=1955972257]
+[node name="Lab" type="Label" parent="VBox/GameZone/VBox/PersonnageContent/StatsFrame/Margin/StatsGrid/Spd" unique_id=1955972257]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 1
@@ -597,20 +606,20 @@ theme_override_font_sizes/font_size = 16
 text = "SPD"
 vertical_alignment = 1
 
-[node name="Val" type="Label" parent="VBox/GameZone/VBox/StatsFrame/Margin/StatsGrid/Spd" unique_id=2140880321]
+[node name="Val" type="Label" parent="VBox/GameZone/VBox/PersonnageContent/StatsFrame/Margin/StatsGrid/Spd" unique_id=2140880321]
 layout_mode = 2
 theme_override_font_sizes/font_size = 20
 text = "105"
 horizontal_alignment = 2
 vertical_alignment = 1
 
-[node name="Vit" type="PanelContainer" parent="VBox/GameZone/VBox/StatsFrame/Margin/StatsGrid" unique_id=1149031740]
+[node name="Vit" type="PanelContainer" parent="VBox/GameZone/VBox/PersonnageContent/StatsFrame/Margin/StatsGrid" unique_id=1149031740]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 theme_override_styles/panel = SubResource("StyleBoxFlat_stat")
 
-[node name="Lab" type="Label" parent="VBox/GameZone/VBox/StatsFrame/Margin/StatsGrid/Vit" unique_id=669717134]
+[node name="Lab" type="Label" parent="VBox/GameZone/VBox/PersonnageContent/StatsFrame/Margin/StatsGrid/Vit" unique_id=669717134]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 1
@@ -619,20 +628,20 @@ theme_override_font_sizes/font_size = 16
 text = "VIT"
 vertical_alignment = 1
 
-[node name="Val" type="Label" parent="VBox/GameZone/VBox/StatsFrame/Margin/StatsGrid/Vit" unique_id=1251743121]
+[node name="Val" type="Label" parent="VBox/GameZone/VBox/PersonnageContent/StatsFrame/Margin/StatsGrid/Vit" unique_id=1251743121]
 layout_mode = 2
 theme_override_font_sizes/font_size = 20
 text = "10"
 horizontal_alignment = 2
 vertical_alignment = 1
 
-[node name="Crit" type="PanelContainer" parent="VBox/GameZone/VBox/StatsFrame/Margin/StatsGrid" unique_id=663252212]
+[node name="Crit" type="PanelContainer" parent="VBox/GameZone/VBox/PersonnageContent/StatsFrame/Margin/StatsGrid" unique_id=663252212]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 theme_override_styles/panel = SubResource("StyleBoxFlat_stat")
 
-[node name="Lab" type="Label" parent="VBox/GameZone/VBox/StatsFrame/Margin/StatsGrid/Crit" unique_id=556466500]
+[node name="Lab" type="Label" parent="VBox/GameZone/VBox/PersonnageContent/StatsFrame/Margin/StatsGrid/Crit" unique_id=556466500]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 1
@@ -641,20 +650,20 @@ theme_override_font_sizes/font_size = 16
 text = "CRIT"
 vertical_alignment = 1
 
-[node name="Val" type="Label" parent="VBox/GameZone/VBox/StatsFrame/Margin/StatsGrid/Crit" unique_id=1019210577]
+[node name="Val" type="Label" parent="VBox/GameZone/VBox/PersonnageContent/StatsFrame/Margin/StatsGrid/Crit" unique_id=1019210577]
 layout_mode = 2
 theme_override_font_sizes/font_size = 20
 text = "5%"
 horizontal_alignment = 2
 vertical_alignment = 1
 
-[node name="Wil" type="PanelContainer" parent="VBox/GameZone/VBox/StatsFrame/Margin/StatsGrid" unique_id=991000001]
+[node name="Wil" type="PanelContainer" parent="VBox/GameZone/VBox/PersonnageContent/StatsFrame/Margin/StatsGrid" unique_id=991000001]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 theme_override_styles/panel = SubResource("StyleBoxFlat_stat")
 
-[node name="Lab" type="Label" parent="VBox/GameZone/VBox/StatsFrame/Margin/StatsGrid/Wil" unique_id=991000002]
+[node name="Lab" type="Label" parent="VBox/GameZone/VBox/PersonnageContent/StatsFrame/Margin/StatsGrid/Wil" unique_id=991000002]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 1
@@ -663,20 +672,20 @@ theme_override_font_sizes/font_size = 16
 text = "WIL"
 vertical_alignment = 1
 
-[node name="Val" type="Label" parent="VBox/GameZone/VBox/StatsFrame/Margin/StatsGrid/Wil" unique_id=991000003]
+[node name="Val" type="Label" parent="VBox/GameZone/VBox/PersonnageContent/StatsFrame/Margin/StatsGrid/Wil" unique_id=991000003]
 layout_mode = 2
 theme_override_font_sizes/font_size = 20
 text = "10"
 horizontal_alignment = 2
 vertical_alignment = 1
 
-[node name="Per" type="PanelContainer" parent="VBox/GameZone/VBox/StatsFrame/Margin/StatsGrid" unique_id=991000004]
+[node name="Per" type="PanelContainer" parent="VBox/GameZone/VBox/PersonnageContent/StatsFrame/Margin/StatsGrid" unique_id=991000004]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 theme_override_styles/panel = SubResource("StyleBoxFlat_stat")
 
-[node name="Lab" type="Label" parent="VBox/GameZone/VBox/StatsFrame/Margin/StatsGrid/Per" unique_id=991000005]
+[node name="Lab" type="Label" parent="VBox/GameZone/VBox/PersonnageContent/StatsFrame/Margin/StatsGrid/Per" unique_id=991000005]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 1
@@ -685,20 +694,20 @@ theme_override_font_sizes/font_size = 16
 text = "PER"
 vertical_alignment = 1
 
-[node name="Val" type="Label" parent="VBox/GameZone/VBox/StatsFrame/Margin/StatsGrid/Per" unique_id=991000006]
+[node name="Val" type="Label" parent="VBox/GameZone/VBox/PersonnageContent/StatsFrame/Margin/StatsGrid/Per" unique_id=991000006]
 layout_mode = 2
 theme_override_font_sizes/font_size = 20
 text = "10"
 horizontal_alignment = 2
 vertical_alignment = 1
 
-[node name="Cha" type="PanelContainer" parent="VBox/GameZone/VBox/StatsFrame/Margin/StatsGrid" unique_id=991000007]
+[node name="Cha" type="PanelContainer" parent="VBox/GameZone/VBox/PersonnageContent/StatsFrame/Margin/StatsGrid" unique_id=991000007]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 theme_override_styles/panel = SubResource("StyleBoxFlat_stat")
 
-[node name="Lab" type="Label" parent="VBox/GameZone/VBox/StatsFrame/Margin/StatsGrid/Cha" unique_id=991000008]
+[node name="Lab" type="Label" parent="VBox/GameZone/VBox/PersonnageContent/StatsFrame/Margin/StatsGrid/Cha" unique_id=991000008]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 1
@@ -707,20 +716,20 @@ theme_override_font_sizes/font_size = 16
 text = "CHA"
 vertical_alignment = 1
 
-[node name="Val" type="Label" parent="VBox/GameZone/VBox/StatsFrame/Margin/StatsGrid/Cha" unique_id=991000009]
+[node name="Val" type="Label" parent="VBox/GameZone/VBox/PersonnageContent/StatsFrame/Margin/StatsGrid/Cha" unique_id=991000009]
 layout_mode = 2
 theme_override_font_sizes/font_size = 20
 text = "10"
 horizontal_alignment = 2
 vertical_alignment = 1
 
-[node name="Lck" type="PanelContainer" parent="VBox/GameZone/VBox/StatsFrame/Margin/StatsGrid" unique_id=991000010]
+[node name="Lck" type="PanelContainer" parent="VBox/GameZone/VBox/PersonnageContent/StatsFrame/Margin/StatsGrid" unique_id=991000010]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 theme_override_styles/panel = SubResource("StyleBoxFlat_stat")
 
-[node name="Lab" type="Label" parent="VBox/GameZone/VBox/StatsFrame/Margin/StatsGrid/Lck" unique_id=991000011]
+[node name="Lab" type="Label" parent="VBox/GameZone/VBox/PersonnageContent/StatsFrame/Margin/StatsGrid/Lck" unique_id=991000011]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 1
@@ -729,66 +738,66 @@ theme_override_font_sizes/font_size = 16
 text = "LCK"
 vertical_alignment = 1
 
-[node name="Val" type="Label" parent="VBox/GameZone/VBox/StatsFrame/Margin/StatsGrid/Lck" unique_id=991000012]
+[node name="Val" type="Label" parent="VBox/GameZone/VBox/PersonnageContent/StatsFrame/Margin/StatsGrid/Lck" unique_id=991000012]
 layout_mode = 2
 theme_override_font_sizes/font_size = 20
 text = "10"
 horizontal_alignment = 2
 vertical_alignment = 1
 
-[node name="InvPanel" type="PanelContainer" parent="VBox/GameZone/VBox" unique_id=866574989]
+[node name="InvPanel" type="PanelContainer" parent="VBox/GameZone/VBox/PersonnageContent" unique_id=866574989]
 layout_mode = 2
 size_flags_vertical = 3
 theme_override_styles/panel = SubResource("StyleBoxFlat_inv_panel")
 
-[node name="Margin" type="MarginContainer" parent="VBox/GameZone/VBox/InvPanel" unique_id=2057286663]
+[node name="Margin" type="MarginContainer" parent="VBox/GameZone/VBox/PersonnageContent/InvPanel" unique_id=2057286663]
 layout_mode = 2
 theme_override_constants/margin_left = 10
 theme_override_constants/margin_top = 10
 theme_override_constants/margin_right = 10
 theme_override_constants/margin_bottom = 10
 
-[node name="VBox" type="VBoxContainer" parent="VBox/GameZone/VBox/InvPanel/Margin" unique_id=1096154005]
+[node name="VBox" type="VBoxContainer" parent="VBox/GameZone/VBox/PersonnageContent/InvPanel/Margin" unique_id=1096154005]
 layout_mode = 2
 theme_override_constants/separation = 8
 
-[node name="Header" type="HBoxContainer" parent="VBox/GameZone/VBox/InvPanel/Margin/VBox" unique_id=2063410571]
+[node name="Header" type="HBoxContainer" parent="VBox/GameZone/VBox/PersonnageContent/InvPanel/Margin/VBox" unique_id=2063410571]
 layout_mode = 2
 
-[node name="L" type="Label" parent="VBox/GameZone/VBox/InvPanel/Margin/VBox/Header" unique_id=2106745304]
+[node name="L" type="Label" parent="VBox/GameZone/VBox/PersonnageContent/InvPanel/Margin/VBox/Header" unique_id=2106745304]
 layout_mode = 2
 theme_override_colors/font_color = Color(0, 0.6, 1, 1)
 theme_override_font_sizes/font_size = 14
 text = "INVENTAIRE"
 
-[node name="Spacer" type="Control" parent="VBox/GameZone/VBox/InvPanel/Margin/VBox/Header" unique_id=279174499]
+[node name="Spacer" type="Control" parent="VBox/GameZone/VBox/PersonnageContent/InvPanel/Margin/VBox/Header" unique_id=279174499]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="BtnPrev" type="Button" parent="VBox/GameZone/VBox/InvPanel/Margin/VBox/Header" unique_id=1893899303]
+[node name="BtnPrev" type="Button" parent="VBox/GameZone/VBox/PersonnageContent/InvPanel/Margin/VBox/Header" unique_id=1893899303]
 custom_minimum_size = Vector2(30, 0)
 layout_mode = 2
 theme_override_styles/normal = SubResource("StyleBoxFlat_btn_blue")
 text = "<"
 
-[node name="PageLabel" type="Label" parent="VBox/GameZone/VBox/InvPanel/Margin/VBox/Header" unique_id=2092872555]
+[node name="PageLabel" type="Label" parent="VBox/GameZone/VBox/PersonnageContent/InvPanel/Margin/VBox/Header" unique_id=2092872555]
 custom_minimum_size = Vector2(50, 0)
 layout_mode = 2
 theme_override_font_sizes/font_size = 14
 text = "1 / 5"
 horizontal_alignment = 1
 
-[node name="BtnNext" type="Button" parent="VBox/GameZone/VBox/InvPanel/Margin/VBox/Header" unique_id=1809176215]
+[node name="BtnNext" type="Button" parent="VBox/GameZone/VBox/PersonnageContent/InvPanel/Margin/VBox/Header" unique_id=1809176215]
 custom_minimum_size = Vector2(30, 0)
 layout_mode = 2
 theme_override_styles/normal = SubResource("StyleBoxFlat_btn_blue")
 text = ">"
 
-[node name="GridZone" type="MarginContainer" parent="VBox/GameZone/VBox/InvPanel/Margin/VBox" unique_id=811458936]
+[node name="GridZone" type="MarginContainer" parent="VBox/GameZone/VBox/PersonnageContent/InvPanel/Margin/VBox" unique_id=811458936]
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="Grille" type="GridContainer" parent="VBox/GameZone/VBox/InvPanel/Margin/VBox/GridZone" unique_id=359397187]
+[node name="Grille" type="GridContainer" parent="VBox/GameZone/VBox/PersonnageContent/InvPanel/Margin/VBox/GridZone" unique_id=359397187]
 layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 4
@@ -796,227 +805,242 @@ theme_override_constants/h_separation = 15
 theme_override_constants/v_separation = 15
 columns = 9
 
-[node name="S1" type="Panel" parent="VBox/GameZone/VBox/InvPanel/Margin/VBox/GridZone/Grille" unique_id=1896415205]
+[node name="S1" type="Panel" parent="VBox/GameZone/VBox/PersonnageContent/InvPanel/Margin/VBox/GridZone/Grille" unique_id=1896415205]
 custom_minimum_size = Vector2(62, 62)
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_inv_slot")
 
-[node name="S2" type="Panel" parent="VBox/GameZone/VBox/InvPanel/Margin/VBox/GridZone/Grille" unique_id=1378398594]
+[node name="S2" type="Panel" parent="VBox/GameZone/VBox/PersonnageContent/InvPanel/Margin/VBox/GridZone/Grille" unique_id=1378398594]
 custom_minimum_size = Vector2(62, 62)
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_inv_slot")
 
-[node name="S3" type="Panel" parent="VBox/GameZone/VBox/InvPanel/Margin/VBox/GridZone/Grille" unique_id=1313111648]
+[node name="S3" type="Panel" parent="VBox/GameZone/VBox/PersonnageContent/InvPanel/Margin/VBox/GridZone/Grille" unique_id=1313111648]
 custom_minimum_size = Vector2(62, 62)
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_inv_slot")
 
-[node name="S4" type="Panel" parent="VBox/GameZone/VBox/InvPanel/Margin/VBox/GridZone/Grille" unique_id=1034951042]
+[node name="S4" type="Panel" parent="VBox/GameZone/VBox/PersonnageContent/InvPanel/Margin/VBox/GridZone/Grille" unique_id=1034951042]
 custom_minimum_size = Vector2(62, 62)
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_inv_slot")
 
-[node name="S5" type="Panel" parent="VBox/GameZone/VBox/InvPanel/Margin/VBox/GridZone/Grille" unique_id=1109357616]
+[node name="S5" type="Panel" parent="VBox/GameZone/VBox/PersonnageContent/InvPanel/Margin/VBox/GridZone/Grille" unique_id=1109357616]
 custom_minimum_size = Vector2(62, 62)
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_inv_slot")
 
-[node name="S6" type="Panel" parent="VBox/GameZone/VBox/InvPanel/Margin/VBox/GridZone/Grille" unique_id=675510685]
+[node name="S6" type="Panel" parent="VBox/GameZone/VBox/PersonnageContent/InvPanel/Margin/VBox/GridZone/Grille" unique_id=675510685]
 custom_minimum_size = Vector2(62, 62)
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_inv_slot")
 
-[node name="S7" type="Panel" parent="VBox/GameZone/VBox/InvPanel/Margin/VBox/GridZone/Grille" unique_id=947938211]
+[node name="S7" type="Panel" parent="VBox/GameZone/VBox/PersonnageContent/InvPanel/Margin/VBox/GridZone/Grille" unique_id=947938211]
 custom_minimum_size = Vector2(62, 62)
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_inv_slot")
 
-[node name="S8" type="Panel" parent="VBox/GameZone/VBox/InvPanel/Margin/VBox/GridZone/Grille" unique_id=1477797006]
+[node name="S8" type="Panel" parent="VBox/GameZone/VBox/PersonnageContent/InvPanel/Margin/VBox/GridZone/Grille" unique_id=1477797006]
 custom_minimum_size = Vector2(62, 62)
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_inv_slot")
 
-[node name="S9" type="Panel" parent="VBox/GameZone/VBox/InvPanel/Margin/VBox/GridZone/Grille" unique_id=549902636]
+[node name="S9" type="Panel" parent="VBox/GameZone/VBox/PersonnageContent/InvPanel/Margin/VBox/GridZone/Grille" unique_id=549902636]
 custom_minimum_size = Vector2(62, 62)
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_inv_slot")
 
-[node name="S10" type="Panel" parent="VBox/GameZone/VBox/InvPanel/Margin/VBox/GridZone/Grille" unique_id=1860436347]
+[node name="S10" type="Panel" parent="VBox/GameZone/VBox/PersonnageContent/InvPanel/Margin/VBox/GridZone/Grille" unique_id=1860436347]
 custom_minimum_size = Vector2(62, 62)
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_inv_slot")
 
-[node name="S11" type="Panel" parent="VBox/GameZone/VBox/InvPanel/Margin/VBox/GridZone/Grille" unique_id=447541093]
+[node name="S11" type="Panel" parent="VBox/GameZone/VBox/PersonnageContent/InvPanel/Margin/VBox/GridZone/Grille" unique_id=447541093]
 custom_minimum_size = Vector2(62, 62)
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_inv_slot")
 
-[node name="S12" type="Panel" parent="VBox/GameZone/VBox/InvPanel/Margin/VBox/GridZone/Grille" unique_id=429988258]
+[node name="S12" type="Panel" parent="VBox/GameZone/VBox/PersonnageContent/InvPanel/Margin/VBox/GridZone/Grille" unique_id=429988258]
 custom_minimum_size = Vector2(62, 62)
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_inv_slot")
 
-[node name="S13" type="Panel" parent="VBox/GameZone/VBox/InvPanel/Margin/VBox/GridZone/Grille" unique_id=190997460]
+[node name="S13" type="Panel" parent="VBox/GameZone/VBox/PersonnageContent/InvPanel/Margin/VBox/GridZone/Grille" unique_id=190997460]
 custom_minimum_size = Vector2(62, 62)
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_inv_slot")
 
-[node name="S14" type="Panel" parent="VBox/GameZone/VBox/InvPanel/Margin/VBox/GridZone/Grille" unique_id=1017449989]
+[node name="S14" type="Panel" parent="VBox/GameZone/VBox/PersonnageContent/InvPanel/Margin/VBox/GridZone/Grille" unique_id=1017449989]
 custom_minimum_size = Vector2(62, 62)
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_inv_slot")
 
-[node name="S15" type="Panel" parent="VBox/GameZone/VBox/InvPanel/Margin/VBox/GridZone/Grille" unique_id=968550860]
+[node name="S15" type="Panel" parent="VBox/GameZone/VBox/PersonnageContent/InvPanel/Margin/VBox/GridZone/Grille" unique_id=968550860]
 custom_minimum_size = Vector2(62, 62)
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_inv_slot")
 
-[node name="S16" type="Panel" parent="VBox/GameZone/VBox/InvPanel/Margin/VBox/GridZone/Grille" unique_id=547566797]
+[node name="S16" type="Panel" parent="VBox/GameZone/VBox/PersonnageContent/InvPanel/Margin/VBox/GridZone/Grille" unique_id=547566797]
 custom_minimum_size = Vector2(62, 62)
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_inv_slot")
 
-[node name="S17" type="Panel" parent="VBox/GameZone/VBox/InvPanel/Margin/VBox/GridZone/Grille" unique_id=387375357]
+[node name="S17" type="Panel" parent="VBox/GameZone/VBox/PersonnageContent/InvPanel/Margin/VBox/GridZone/Grille" unique_id=387375357]
 custom_minimum_size = Vector2(62, 62)
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_inv_slot")
 
-[node name="S18" type="Panel" parent="VBox/GameZone/VBox/InvPanel/Margin/VBox/GridZone/Grille" unique_id=1446591505]
+[node name="S18" type="Panel" parent="VBox/GameZone/VBox/PersonnageContent/InvPanel/Margin/VBox/GridZone/Grille" unique_id=1446591505]
 custom_minimum_size = Vector2(62, 62)
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_inv_slot")
 
-[node name="S19" type="Panel" parent="VBox/GameZone/VBox/InvPanel/Margin/VBox/GridZone/Grille" unique_id=2114043780]
+[node name="S19" type="Panel" parent="VBox/GameZone/VBox/PersonnageContent/InvPanel/Margin/VBox/GridZone/Grille" unique_id=2114043780]
 custom_minimum_size = Vector2(62, 62)
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_inv_slot")
 
-[node name="S20" type="Panel" parent="VBox/GameZone/VBox/InvPanel/Margin/VBox/GridZone/Grille" unique_id=1049044506]
+[node name="S20" type="Panel" parent="VBox/GameZone/VBox/PersonnageContent/InvPanel/Margin/VBox/GridZone/Grille" unique_id=1049044506]
 custom_minimum_size = Vector2(62, 62)
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_inv_slot")
 
-[node name="S21" type="Panel" parent="VBox/GameZone/VBox/InvPanel/Margin/VBox/GridZone/Grille" unique_id=1396271855]
+[node name="S21" type="Panel" parent="VBox/GameZone/VBox/PersonnageContent/InvPanel/Margin/VBox/GridZone/Grille" unique_id=1396271855]
 custom_minimum_size = Vector2(62, 62)
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_inv_slot")
 
-[node name="S22" type="Panel" parent="VBox/GameZone/VBox/InvPanel/Margin/VBox/GridZone/Grille" unique_id=117945778]
+[node name="S22" type="Panel" parent="VBox/GameZone/VBox/PersonnageContent/InvPanel/Margin/VBox/GridZone/Grille" unique_id=117945778]
 custom_minimum_size = Vector2(62, 62)
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_inv_slot")
 
-[node name="S23" type="Panel" parent="VBox/GameZone/VBox/InvPanel/Margin/VBox/GridZone/Grille" unique_id=1177640195]
+[node name="S23" type="Panel" parent="VBox/GameZone/VBox/PersonnageContent/InvPanel/Margin/VBox/GridZone/Grille" unique_id=1177640195]
 custom_minimum_size = Vector2(62, 62)
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_inv_slot")
 
-[node name="S24" type="Panel" parent="VBox/GameZone/VBox/InvPanel/Margin/VBox/GridZone/Grille" unique_id=579641756]
+[node name="S24" type="Panel" parent="VBox/GameZone/VBox/PersonnageContent/InvPanel/Margin/VBox/GridZone/Grille" unique_id=579641756]
 custom_minimum_size = Vector2(62, 62)
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_inv_slot")
 
-[node name="S25" type="Panel" parent="VBox/GameZone/VBox/InvPanel/Margin/VBox/GridZone/Grille" unique_id=2065867583]
+[node name="S25" type="Panel" parent="VBox/GameZone/VBox/PersonnageContent/InvPanel/Margin/VBox/GridZone/Grille" unique_id=2065867583]
 custom_minimum_size = Vector2(62, 62)
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_inv_slot")
 
-[node name="S26" type="Panel" parent="VBox/GameZone/VBox/InvPanel/Margin/VBox/GridZone/Grille" unique_id=1475032922]
+[node name="S26" type="Panel" parent="VBox/GameZone/VBox/PersonnageContent/InvPanel/Margin/VBox/GridZone/Grille" unique_id=1475032922]
 custom_minimum_size = Vector2(62, 62)
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_inv_slot")
 
-[node name="S27" type="Panel" parent="VBox/GameZone/VBox/InvPanel/Margin/VBox/GridZone/Grille" unique_id=1914538575]
+[node name="S27" type="Panel" parent="VBox/GameZone/VBox/PersonnageContent/InvPanel/Margin/VBox/GridZone/Grille" unique_id=1914538575]
 custom_minimum_size = Vector2(62, 62)
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_inv_slot")
 
-[node name="S28" type="Panel" parent="VBox/GameZone/VBox/InvPanel/Margin/VBox/GridZone/Grille" unique_id=2013548733]
+[node name="S28" type="Panel" parent="VBox/GameZone/VBox/PersonnageContent/InvPanel/Margin/VBox/GridZone/Grille" unique_id=2013548733]
 custom_minimum_size = Vector2(62, 62)
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_inv_slot")
 
-[node name="S29" type="Panel" parent="VBox/GameZone/VBox/InvPanel/Margin/VBox/GridZone/Grille" unique_id=1153360037]
+[node name="S29" type="Panel" parent="VBox/GameZone/VBox/PersonnageContent/InvPanel/Margin/VBox/GridZone/Grille" unique_id=1153360037]
 custom_minimum_size = Vector2(62, 62)
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_inv_slot")
 
-[node name="S30" type="Panel" parent="VBox/GameZone/VBox/InvPanel/Margin/VBox/GridZone/Grille" unique_id=958705833]
+[node name="S30" type="Panel" parent="VBox/GameZone/VBox/PersonnageContent/InvPanel/Margin/VBox/GridZone/Grille" unique_id=958705833]
 custom_minimum_size = Vector2(62, 62)
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_inv_slot")
 
-[node name="S31" type="Panel" parent="VBox/GameZone/VBox/InvPanel/Margin/VBox/GridZone/Grille" unique_id=2144188264]
+[node name="S31" type="Panel" parent="VBox/GameZone/VBox/PersonnageContent/InvPanel/Margin/VBox/GridZone/Grille" unique_id=2144188264]
 custom_minimum_size = Vector2(62, 62)
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_inv_slot")
 
-[node name="S32" type="Panel" parent="VBox/GameZone/VBox/InvPanel/Margin/VBox/GridZone/Grille" unique_id=595132515]
+[node name="S32" type="Panel" parent="VBox/GameZone/VBox/PersonnageContent/InvPanel/Margin/VBox/GridZone/Grille" unique_id=595132515]
 custom_minimum_size = Vector2(62, 62)
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_inv_slot")
 
-[node name="S33" type="Panel" parent="VBox/GameZone/VBox/InvPanel/Margin/VBox/GridZone/Grille" unique_id=835597543]
+[node name="S33" type="Panel" parent="VBox/GameZone/VBox/PersonnageContent/InvPanel/Margin/VBox/GridZone/Grille" unique_id=835597543]
 custom_minimum_size = Vector2(62, 62)
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_inv_slot")
 
-[node name="S34" type="Panel" parent="VBox/GameZone/VBox/InvPanel/Margin/VBox/GridZone/Grille" unique_id=77007877]
+[node name="S34" type="Panel" parent="VBox/GameZone/VBox/PersonnageContent/InvPanel/Margin/VBox/GridZone/Grille" unique_id=77007877]
 custom_minimum_size = Vector2(62, 62)
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_inv_slot")
 
-[node name="S35" type="Panel" parent="VBox/GameZone/VBox/InvPanel/Margin/VBox/GridZone/Grille" unique_id=1739059598]
+[node name="S35" type="Panel" parent="VBox/GameZone/VBox/PersonnageContent/InvPanel/Margin/VBox/GridZone/Grille" unique_id=1739059598]
 custom_minimum_size = Vector2(62, 62)
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_inv_slot")
 
-[node name="S36" type="Panel" parent="VBox/GameZone/VBox/InvPanel/Margin/VBox/GridZone/Grille" unique_id=1833845544]
+[node name="S36" type="Panel" parent="VBox/GameZone/VBox/PersonnageContent/InvPanel/Margin/VBox/GridZone/Grille" unique_id=1833845544]
 custom_minimum_size = Vector2(62, 62)
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_inv_slot")
 
-[node name="S37" type="Panel" parent="VBox/GameZone/VBox/InvPanel/Margin/VBox/GridZone/Grille" unique_id=1370395415]
+[node name="S37" type="Panel" parent="VBox/GameZone/VBox/PersonnageContent/InvPanel/Margin/VBox/GridZone/Grille" unique_id=1370395415]
 custom_minimum_size = Vector2(62, 62)
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_inv_slot")
 
-[node name="S38" type="Panel" parent="VBox/GameZone/VBox/InvPanel/Margin/VBox/GridZone/Grille" unique_id=681633221]
+[node name="S38" type="Panel" parent="VBox/GameZone/VBox/PersonnageContent/InvPanel/Margin/VBox/GridZone/Grille" unique_id=681633221]
 custom_minimum_size = Vector2(62, 62)
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_inv_slot")
 
-[node name="S39" type="Panel" parent="VBox/GameZone/VBox/InvPanel/Margin/VBox/GridZone/Grille" unique_id=995333878]
+[node name="S39" type="Panel" parent="VBox/GameZone/VBox/PersonnageContent/InvPanel/Margin/VBox/GridZone/Grille" unique_id=995333878]
 custom_minimum_size = Vector2(62, 62)
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_inv_slot")
 
-[node name="S40" type="Panel" parent="VBox/GameZone/VBox/InvPanel/Margin/VBox/GridZone/Grille" unique_id=1801211755]
+[node name="S40" type="Panel" parent="VBox/GameZone/VBox/PersonnageContent/InvPanel/Margin/VBox/GridZone/Grille" unique_id=1801211755]
 custom_minimum_size = Vector2(62, 62)
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_inv_slot")
 
-[node name="S41" type="Panel" parent="VBox/GameZone/VBox/InvPanel/Margin/VBox/GridZone/Grille" unique_id=1731559728]
+[node name="S41" type="Panel" parent="VBox/GameZone/VBox/PersonnageContent/InvPanel/Margin/VBox/GridZone/Grille" unique_id=1731559728]
 custom_minimum_size = Vector2(62, 62)
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_inv_slot")
 
-[node name="S42" type="Panel" parent="VBox/GameZone/VBox/InvPanel/Margin/VBox/GridZone/Grille" unique_id=1740324567]
+[node name="S42" type="Panel" parent="VBox/GameZone/VBox/PersonnageContent/InvPanel/Margin/VBox/GridZone/Grille" unique_id=1740324567]
 custom_minimum_size = Vector2(62, 62)
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_inv_slot")
 
-[node name="S43" type="Panel" parent="VBox/GameZone/VBox/InvPanel/Margin/VBox/GridZone/Grille" unique_id=2088599031]
+[node name="S43" type="Panel" parent="VBox/GameZone/VBox/PersonnageContent/InvPanel/Margin/VBox/GridZone/Grille" unique_id=2088599031]
 custom_minimum_size = Vector2(62, 62)
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_inv_slot")
 
-[node name="S44" type="Panel" parent="VBox/GameZone/VBox/InvPanel/Margin/VBox/GridZone/Grille" unique_id=1597440371]
+[node name="S44" type="Panel" parent="VBox/GameZone/VBox/PersonnageContent/InvPanel/Margin/VBox/GridZone/Grille" unique_id=1597440371]
 custom_minimum_size = Vector2(62, 62)
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_inv_slot")
 
-[node name="S45" type="Panel" parent="VBox/GameZone/VBox/InvPanel/Margin/VBox/GridZone/Grille" unique_id=916881352]
+[node name="S45" type="Panel" parent="VBox/GameZone/VBox/PersonnageContent/InvPanel/Margin/VBox/GridZone/Grille" unique_id=916881352]
 custom_minimum_size = Vector2(62, 62)
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_inv_slot")
+
+[node name="MissionsPanel" type="PanelContainer" parent="VBox/GameZone/VBox"]
+visible = false
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
+script = ExtResource("script_missions")
+
+[node name="Margin" type="MarginContainer" parent="VBox/GameZone/VBox/MissionsPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 15
+theme_override_constants/margin_right = 15
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_bottom = 10
