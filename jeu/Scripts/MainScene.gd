@@ -144,6 +144,8 @@ func _on_nav_pressed(tab_name: String):
 		_missions_panel.hide()
 		hero_frame.show(); stats_frame.show(); inv_panel.show()
 		update_ui()
+	await get_tree().process_frame
+	print("[NAV2] tab=%s VBox=%s Nav=%s GameZone=%s" % [tab_name, $VBox.size, $VBox/Nav.size, $VBox/GameZone.size])
 
 # ---------------------------------------------------------------------------
 # UI update
