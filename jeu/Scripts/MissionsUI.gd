@@ -17,6 +17,7 @@ func _ready():
 	_main_vbox.add_theme_constant_override("separation", 14)
 	add_child(_main_vbox)
 
+	GlobalEngine.missions_changed.connect(_build_static_ui)
 	_build_static_ui()
 
 func _build_static_ui():

@@ -5,7 +5,8 @@ signal leveled_up(new_level)
 signal xp_gained(amount)
 signal mission_completed(xp_amount, stat_name, stat_amount)
 signal mission_failed(hp_lost)
-signal tab_changed(tab_name) 
+signal tab_changed(tab_name)
+signal missions_changed
 
 const SAVE_PATH = "user://save_game.dat"
 
@@ -213,11 +214,13 @@ func reset_daily_missions():
 	time_until_reset = reset_duration
 	available_missions.clear()
 	generate_missions()
+	missions_changed.emit()
 
 func reset_weekly_missions():
 	time_until_weekly_reset = weekly_reset_duration
 	available_weekly_missions.clear()
 	generate_missions()
+	missions_changed.emit()
 
 func get_time_string() -> String:
 	var ts = int(time_until_reset)
