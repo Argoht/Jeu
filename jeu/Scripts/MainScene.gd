@@ -67,6 +67,7 @@ func _ready() -> void:
 
 	# Signaux GlobalEngine
 	GlobalEngine.stats_updated.connect(update_ui)
+	GlobalEngine.inventory_changed.connect(update_inventory_display)
 	update_ui()
 
 	_build_debug_bar()
@@ -147,11 +148,18 @@ func update_inventory_display() -> void:
 			lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 			lbl.vertical_alignment   = VERTICAL_ALIGNMENT_CENTER
 			lbl.add_theme_font_size_override("font_size", 10)
-			var color := Color("#00f2ff")
-			if item["rarity"] == "rare":      color = Color("#ffff00")
-			elif item["rarity"] == "epic":    color = Color("#ff00ff")
-			lbl.add_theme_color_override("font_color", color)
+			lbl.add_theme_color_override("font_color", _rarity_color(item.get("rarity", "common")))
 			slot.add_child(lbl)
+
+## Couleur d'affichage par rareté (aligné sur ItemData.get_rarity_color).
+func _rarity_color(rarity: String) -> Color:
+	match rarity:
+		"common":    return Color("#aaaaaa")
+		"rare":      return Color("#00f2ff")
+		"epic":      return Color("#cc44ff")
+		"legendary": return Color("#ffd700")
+		"mythic":    return Color("#ff4444")
+	return Color("#aaaaaa")
 
 # ── Rename button ─────────────────────────────────────────────────────────────
 
@@ -219,6 +227,7 @@ func _build_debug_bar() -> void:
 		["Reset Quotidien", func(): GlobalEngine.debug_reset_daily()],
 		["Reset Hebdo",     func(): GlobalEngine.debug_reset_weekly()],
 		["+ Niveau",        func(): GlobalEngine.debug_add_level()],
+		["+ Loot",          func(): GlobalEngine.debug_add_loot()],
 	]:
 		var b := Button.new()
 		b.text = btn_data[0]

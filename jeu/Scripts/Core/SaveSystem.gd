@@ -2,14 +2,15 @@ class_name SaveSystem
 extends Node
 
 ## Handles serialization, deserialization, and corruption protection.
-## Uses duck typing for PlayerData/MissionManager to avoid class_name circular deps.
+## Uses duck typing for PlayerData/MissionManager/InventorySystem to avoid
+## class_name circular deps at autoload compile time.
 
 const SAVE_PATH = "user://save_game.dat"
-const SAVE_VERSION = 2
+const SAVE_VERSION = 3
 
 # ── Public API ────────────────────────────────────────────────────────────────
 
-func save_game(player_data, mission_manager) -> void:
+func save_game(player_data, mission_manager, inventory_system) -> void:
 	var save_data := {
 		"version": SAVE_VERSION,
 		"player_name": player_data.player_name,
@@ -21,6 +22,7 @@ func save_game(player_data, mission_manager) -> void:
 		"xp": player_data.xp,
 		"stat_points": player_data.stat_points,
 		"base_stats": player_data.base_stats,
+		"inventory": inventory_system.to_dict(),
 		"available_missions": mission_manager.available_missions,
 		"available_weekly_missions": mission_manager.available_weekly_missions,
 		"time_until_reset": mission_manager.time_until_reset,
@@ -31,7 +33,7 @@ func save_game(player_data, mission_manager) -> void:
 	if file:
 		file.store_string(JSON.stringify(save_data))
 
-func load_game(player_data, mission_manager) -> bool:
+func load_game(player_data, mission_manager, inventory_system) -> bool:
 	if not FileAccess.file_exists(SAVE_PATH):
 		return false
 
@@ -46,6 +48,7 @@ func load_game(player_data, mission_manager) -> bool:
 
 	_load_player(player_data, save_data)
 	_load_missions(mission_manager, save_data)
+	_load_inventory(inventory_system, save_data)
 	_apply_offline_time(player_data, mission_manager, save_data)
 	return true
 
@@ -71,6 +74,16 @@ func _load_missions(mm, data: Dictionary) -> void:
 	mm.available_weekly_missions = data.get("available_weekly_missions", [])
 	mm.time_until_reset          = maxf(0.0, float(data.get("time_until_reset", mm.reset_duration)))
 	mm.time_until_weekly_reset   = maxf(0.0, float(data.get("time_until_weekly_reset", mm.weekly_reset_duration)))
+
+func _load_inventory(inv, data: Dictionary) -> void:
+	# Compat: saves v1/v2 avaient "inventory" comme Array plat (pas de Dictionary {items, equipment})
+	var raw = data.get("inventory", null)
+	if raw == null:
+		return
+	if raw is Array:
+		inv.from_dict({"items": raw, "equipment": {}})
+	elif raw is Dictionary:
+		inv.from_dict(raw)
 
 func _apply_offline_time(pd, mm, data: Dictionary) -> void:
 	var now     := Time.get_unix_time_from_system()

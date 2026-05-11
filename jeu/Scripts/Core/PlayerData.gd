@@ -107,6 +107,13 @@ func add_stat(stat_key: String) -> void:
 		update_derived_stats()
 		stats_updated.emit()
 
+## Replace the equipment bonus layer (called by GlobalEngine when inventory changes).
+## Triggers a recompute of derived combat stats and notifies the UI.
+func set_equipment_bonuses(bonuses: Dictionary) -> void:
+	_equipment_bonuses = bonuses
+	update_derived_stats()
+	stats_updated.emit()
+
 # ── Progression ───────────────────────────────────────────────────────────────
 
 func add_xp(amount: int) -> void:

@@ -14,19 +14,20 @@ signal xp_gained(amount: int)
 signal mission_completed(xp_amount: int, stat_name: String, stat_amount: int)
 signal mission_failed(hp_lost: int)
 signal missions_changed
+signal inventory_changed
 
 # ── Subsystems ────────────────────────────────────────────────────────────────
 # Untyped: autoloads are parsed before the global class_name registry is built,
-# so PlayerData / MissionManager / SaveSystem aren't resolvable as types here.
-# Runtime types are PlayerData, MissionManager, SaveSystem respectively.
+# so the Core class_names aren't resolvable as types here.
+# Runtime types: PlayerData, MissionManager, SaveSystem, InventorySystem.
 
-var player_data     = null
-var mission_manager = null
-var save_system     = null
+var player_data      = null
+var mission_manager  = null
+var save_system      = null
+var inventory_system = null
 
-# ── Inventory (will move to InventorySystem in a later step) ──────────────────
+# ── Inventory display constant ────────────────────────────────────────────────
 
-var inventory: Array = []
 var items_per_page: int = 45
 
 # ── Auto-save ─────────────────────────────────────────────────────────────────
@@ -86,22 +87,31 @@ var available_missions: Array:
 var available_weekly_missions: Array:
 	get: return mission_manager.available_weekly_missions
 
+## Backward compat: MainScene reads GlobalEngine.inventory as an Array.
+var inventory: Array:
+	get: return inventory_system.items
+	set(v): inventory_system.items = v
+
 # ── Lifecycle ─────────────────────────────────────────────────────────────────
 
 func _ready() -> void:
-	player_data     = preload("res://Scripts/Core/PlayerData.gd").new()
-	mission_manager = preload("res://Scripts/Core/MissionManager.gd").new()
-	save_system     = preload("res://Scripts/Core/SaveSystem.gd").new()
+	player_data      = preload("res://Scripts/Core/PlayerData.gd").new()
+	mission_manager  = preload("res://Scripts/Core/MissionManager.gd").new()
+	save_system      = preload("res://Scripts/Core/SaveSystem.gd").new()
+	inventory_system = preload("res://Scripts/Core/InventorySystem.gd").new()
 
 	add_child(player_data)
 	add_child(mission_manager)
 	add_child(save_system)
+	add_child(inventory_system)
 
 	mission_manager.initialize(player_data)
 
 	randomize()
 	mission_manager.load_all_missions()
-	save_system.load_game(player_data, mission_manager)
+	save_system.load_game(player_data, mission_manager, inventory_system)
+	# Applique les bonus d'équipement chargés depuis la save
+	player_data.set_equipment_bonuses(inventory_system.get_equipment_bonuses())
 	player_data.update_derived_stats()
 
 	if mission_manager.available_missions.is_empty():
@@ -128,10 +138,17 @@ func _connect_signals() -> void:
 	mission_manager.mission_failed.connect(func(h: int): mission_failed.emit(h))
 	mission_manager.missions_changed.connect(func(): missions_changed.emit())
 
+	inventory_system.inventory_changed.connect(_on_inventory_changed)
+
+func _on_inventory_changed() -> void:
+	# Recalcule les bonus d'équipement → PlayerData.stats_updated → UI refresh
+	player_data.set_equipment_bonuses(inventory_system.get_equipment_bonuses())
+	inventory_changed.emit()
+
 # ── Delegated public API (backward compat) ────────────────────────────────────
 
 func save_game() -> void:
-	save_system.save_game(player_data, mission_manager)
+	save_system.save_game(player_data, mission_manager, inventory_system)
 
 func add_stat(stat_name: String) -> void:
 	player_data.add_stat(stat_name)
@@ -179,3 +196,8 @@ func debug_add_level() -> void:
 	player_data.leveled_up.emit(player_data.lvl)
 	player_data.stats_updated.emit()
 	save_game()
+
+func debug_add_loot() -> Dictionary:
+	var item: Dictionary = inventory_system.generate_loot(player_data.lvl)
+	save_game()
+	return item
