@@ -250,6 +250,21 @@ func check_level_up():
 		stat_points += 3
 		leveled_up.emit(lvl)
 
+# --- DEBUG ---
+func debug_reset_daily():
+	time_until_reset = 0.0
+
+func debug_reset_weekly():
+	time_until_weekly_reset = 0.0
+
+func debug_add_level():
+	lvl += 1
+	stat_points += 3
+	update_derived_stats()
+	leveled_up.emit(lvl)
+	save_game()
+	stats_updated.emit()
+
 func add_stat(stat_name: String):
 	if stat_points > 0 and stats.has(stat_name):
 		stats[stat_name] += 1

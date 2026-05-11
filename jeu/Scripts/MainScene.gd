@@ -62,6 +62,55 @@ func _ready():
 		GlobalEngine.mission_failed.connect(_show_mission_fail)
 		update_ui()
 
+	_build_debug_bar()
+
+# ---------------------------------------------------------------------------
+# Debug
+# ---------------------------------------------------------------------------
+
+func _build_debug_bar():
+	var bar = HBoxContainer.new()
+	bar.add_theme_constant_override("separation", 6)
+
+	var style = StyleBoxFlat.new()
+	style.bg_color = Color(0.15, 0.0, 0.0, 0.85)
+	style.border_width_bottom = 1
+	style.border_color = Color("#ff3333")
+
+	var panel = PanelContainer.new()
+	panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	panel.add_theme_stylebox_override("panel", style)
+
+	var margin = MarginContainer.new()
+	for side in ["margin_left","margin_right","margin_top","margin_bottom"]:
+		margin.add_theme_constant_override(side, 6)
+	panel.add_child(margin)
+	margin.add_child(bar)
+
+	var lbl = Label.new()
+	lbl.text = "⚙ DEBUG"
+	lbl.add_theme_color_override("font_color", Color("#ff3333"))
+	lbl.add_theme_font_size_override("font_size", 11)
+	bar.add_child(lbl)
+
+	var spacer = Control.new()
+	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	bar.add_child(spacer)
+
+	for btn_data in [
+		["Reset Quotidien", func(): GlobalEngine.debug_reset_daily()],
+		["Reset Hebdo",     func(): GlobalEngine.debug_reset_weekly()],
+		["+ Niveau",        func(): GlobalEngine.debug_add_level()],
+	]:
+		var b = Button.new()
+		b.text = btn_data[0]
+		b.add_theme_font_size_override("font_size", 11)
+		b.pressed.connect(btn_data[1])
+		bar.add_child(b)
+
+	$VBox.add_child(panel)
+	$VBox.move_child(panel, 0)
+
 # ---------------------------------------------------------------------------
 # Navigation
 # ---------------------------------------------------------------------------
