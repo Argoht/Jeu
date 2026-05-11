@@ -8,5 +8,3 @@ id = "f_meditation"
 title = "Méditation"
 description = "S'asseoir en silence et observer sa respiration pendant 10 minutes."
 base_xp = 90
-reward_stat = 8
-reward_stat_amount = 1

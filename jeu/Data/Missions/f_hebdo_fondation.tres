@@ -9,5 +9,3 @@ title = "Fondation"
 description = "Réaliser une activité physique chaque jour pendant 5 jours consécutifs."
 type = 1
 base_xp = 600
-reward_stat = 1
-reward_stat_amount = 2

@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="MissionData" format=3 uid="uid://a10silc"]
+
+[ext_resource type="Script" uid="uid://7q6sivsis1nj" path="res://Scripts/MissionData.gd" id="1_a10sl"]
+
+[resource]
+script = ExtResource("1_a10sl")
+id = "a_silence"
+title = "Sixième Sens"
+description = "Passer une journée entière sans musique ni distraction numérique."
+rank = 5
+req_per = 40
+base_xp = 4800
+reward_stat = 7
+reward_stat_amount = 2

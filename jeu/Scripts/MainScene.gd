@@ -165,7 +165,7 @@ func update_ui():
 	label_hp_num.text = str(GlobalEngine.hp) + " / " + str(GlobalEngine.max_hp)
 	barre_end.value    = GlobalEngine.end
 	label_end_num.text = str(GlobalEngine.end) + " / " + str(GlobalEngine.max_end)
-	barre_xp.max_value = GlobalEngine.lvl * 100
+	barre_xp.max_value = GlobalEngine.get_xp_for_level(GlobalEngine.lvl)
 	barre_xp.value     = GlobalEngine.xp
 	label_lvl.text     = "NIVEAU " + str(GlobalEngine.lvl)
 

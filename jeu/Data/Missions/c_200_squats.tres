@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="MissionData" format=3 uid="uid://c11sqa"]
+
+[ext_resource type="Script" uid="uid://7q6sivsis1nj" path="res://Scripts/MissionData.gd" id="1_c11sq"]
+
+[resource]
+script = ExtResource("1_c11sq")
+id = "c_200_squats"
+title = "Corps d'Acier"
+description = "Faire 200 squats cumulés."
+rank = 3
+req_str = 15
+base_xp = 1300
+reward_stat = 1
+reward_stat_amount = 1

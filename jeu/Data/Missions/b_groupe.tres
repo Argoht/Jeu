@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="MissionData" format=3 uid="uid://b10grp"]
+
+[ext_resource type="Script" uid="uid://7q6sivsis1nj" path="res://Scripts/MissionData.gd" id="1_b10gp"]
+
+[resource]
+script = ExtResource("1_b10gp")
+id = "b_groupe"
+title = "Influence du Leader"
+description = "Organiser une activité de groupe."
+rank = 4
+req_cha = 25
+base_xp = 2500
+reward_stat = 6
+reward_stat_amount = 2

@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="MissionData" format=3 uid="uid://a07sprt"]
+
+[ext_resource type="Script" uid="uid://7q6sivsis1nj" path="res://Scripts/MissionData.gd" id="1_a07sp"]
+
+[resource]
+script = ExtResource("1_a07sp")
+id = "a_sprint_agilite"
+title = "Réaction Ultime"
+description = "Faire un entraînement explosif combinant sprint et agilité."
+rank = 5
+req_dex = 42
+base_xp = 5500
+reward_stat = 2
+reward_stat_amount = 2
