@@ -44,7 +44,7 @@ func _build_static_ui():
 
 	var daily_scroll = ScrollContainer.new()
 	daily_scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	daily_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	daily_scroll.custom_minimum_size = Vector2(0, 390)
 	daily_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	_main_vbox.add_child(daily_scroll)
 
