@@ -1,17 +1,22 @@
 extends PanelContainer
 
-@onready var _margin: MarginContainer = $Margin
-
 var _main_vbox: VBoxContainer
 var _daily_vbox: VBoxContainer
 var _timer_acc: float = 0.0
 
 func _ready():
+	var mar = MarginContainer.new()
+	mar.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	mar.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	for side in ["margin_left", "margin_right", "margin_top", "margin_bottom"]:
+		mar.add_theme_constant_override(side, 15 if side in ["margin_left","margin_right"] else 10)
+	add_child(mar)
+
 	_main_vbox = VBoxContainer.new()
 	_main_vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_main_vbox.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	_main_vbox.add_theme_constant_override("separation", 14)
-	_margin.add_child(_main_vbox)
+	mar.add_child(_main_vbox)
 
 	GlobalEngine.missions_changed.connect(_build_static_ui)
 	_build_static_ui()
