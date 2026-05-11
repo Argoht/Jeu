@@ -133,7 +133,10 @@ func _on_nav_pressed(tab_name: String):
 
 	if tab_name == "Missions":
 		hero_frame.hide(); stats_frame.hide(); inv_panel.hide()
-		game_zone_vbox.add_child(MISSIONS_SCENE.instantiate())
+		var missions_inst = MISSIONS_SCENE.instantiate()
+		missions_inst.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		missions_inst.size_flags_vertical   = Control.SIZE_EXPAND_FILL
+		game_zone_vbox.add_child(missions_inst)
 	else:
 		hero_frame.show(); stats_frame.show(); inv_panel.show()
 		update_ui()
