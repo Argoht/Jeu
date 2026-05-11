@@ -12,6 +12,7 @@ const MISSIONS_SCENE = preload("res://Scenes/MissionsUI.tscn")
 @onready var hero_frame  = $VBox/GameZone/VBox/HeroFrame
 @onready var stats_frame = $VBox/GameZone/VBox/StatsFrame
 @onready var inv_panel   = $VBox/GameZone/VBox/InvPanel
+@onready var label_pseudo = $VBox/GameZone/VBox/HeroFrame/Margin/HeroLayout/AvatarCenter/HeaderInfo/Pseudo
 @onready var inv_grid    = $VBox/GameZone/VBox/InvPanel/Margin/VBox/GridZone/Grille
 @onready var page_label  = $VBox/GameZone/VBox/InvPanel/Margin/VBox/Header/PageLabel
 @onready var btn_prev    = $VBox/GameZone/VBox/InvPanel/Margin/VBox/Header/BtnPrev
@@ -24,6 +25,8 @@ var total_pages:  int = 5
 var _lvl_popup:      Control = null
 var _mission_popup:  Control = null
 var _fail_popup:     Control = null
+var _rename_popup:   Control = null
+var _rename_input:   LineEdit = null
 var _lvl_num_label:    Label = null
 var _miss_xp_label:    Label = null
 var _miss_stat_label:  Label = null
@@ -54,6 +57,10 @@ func _ready():
 	add_child(_lvl_popup)
 	add_child(_mission_popup)
 	add_child(_fail_popup)
+
+	_rename_popup = _build_rename_popup()
+	add_child(_rename_popup)
+	_add_rename_button()
 
 	if is_instance_valid(GlobalEngine):
 		GlobalEngine.stats_updated.connect(update_ui)
@@ -168,6 +175,9 @@ func update_ui():
 	barre_xp.max_value = GlobalEngine.get_xp_for_level(GlobalEngine.lvl)
 	barre_xp.value     = GlobalEngine.xp
 	label_lvl.text     = "NIVEAU " + str(GlobalEngine.lvl)
+
+	if is_instance_valid(label_pseudo):
+		label_pseudo.text = GlobalEngine.player_name.to_upper()
 
 	for s_key in stats_labels.keys():
 		var label = stats_labels[s_key]
@@ -391,3 +401,87 @@ func _build_fail_popup() -> Control:
 
 	overlay.hide()
 	return overlay
+
+# ---------------------------------------------------------------------------
+# Pseudo / Renommage
+# ---------------------------------------------------------------------------
+
+func _add_rename_button():
+	var header_info = $VBox/GameZone/VBox/HeroFrame/Margin/HeroLayout/AvatarCenter/HeaderInfo
+	var btn = Button.new()
+	btn.text = "✎"
+	btn.add_theme_font_size_override("font_size", 13)
+	btn.add_theme_color_override("font_color", Color("#00f2ff"))
+	var s = StyleBoxFlat.new()
+	s.bg_color = Color(0, 0, 0, 0)
+	s.border_width_left = 1; s.border_width_top = 1
+	s.border_width_right = 1; s.border_width_bottom = 1
+	s.border_color = Color("#00f2ff")
+	s.corner_radius_top_left = 4; s.corner_radius_top_right = 4
+	s.corner_radius_bottom_left = 4; s.corner_radius_bottom_right = 4
+	s.content_margin_left = 6; s.content_margin_right = 6
+	s.content_margin_top = 2; s.content_margin_bottom = 2
+	btn.add_theme_stylebox_override("normal", s)
+	btn.pressed.connect(_open_rename_popup)
+	header_info.add_child(btn)
+
+func _build_rename_popup() -> Control:
+	var parts     = _make_popup_base(Color("#00f2ff"))
+	var overlay   = parts[0] as Control
+	var vbox      = parts[1] as VBoxContainer
+
+	var title = Label.new()
+	title.text = "CHANGER DE PSEUDO"
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title.add_theme_color_override("font_color", Color("#00f2ff"))
+	title.add_theme_font_size_override("font_size", 16)
+	vbox.add_child(title)
+
+	_rename_input = LineEdit.new()
+	_rename_input.max_length = 20
+	_rename_input.placeholder_text = "Ton pseudo..."
+	_rename_input.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_rename_input.add_theme_font_size_override("font_size", 18)
+	vbox.add_child(_rename_input)
+
+	var btns = HBoxContainer.new()
+	btns.add_theme_constant_override("separation", 12)
+	vbox.add_child(btns)
+
+	var btn_style = parts[2] as StyleBoxFlat
+
+	var btn_cancel = Button.new()
+	btn_cancel.text = "ANNULER"
+	btn_cancel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	btn_cancel.add_theme_stylebox_override("normal", btn_style)
+	btn_cancel.add_theme_color_override("font_color", Color("#888888"))
+	btn_cancel.pressed.connect(func(): overlay.hide())
+	btns.add_child(btn_cancel)
+
+	var btn_confirm = Button.new()
+	btn_confirm.text = "CONFIRMER"
+	btn_confirm.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	btn_confirm.add_theme_stylebox_override("normal", btn_style)
+	btn_confirm.add_theme_color_override("font_color", Color("#00f2ff"))
+	btn_confirm.pressed.connect(_confirm_rename)
+	btns.add_child(btn_confirm)
+
+	_rename_input.text_submitted.connect(func(_t): _confirm_rename())
+
+	overlay.hide()
+	return overlay
+
+func _open_rename_popup():
+	_rename_input.text = GlobalEngine.player_name
+	_rename_input.select_all()
+	_rename_popup.show()
+	_rename_input.grab_focus()
+
+func _confirm_rename():
+	var new_name = _rename_input.text.strip_edges()
+	if new_name.length() > 0:
+		GlobalEngine.player_name = new_name
+		GlobalEngine.save_game()
+		if is_instance_valid(label_pseudo):
+			label_pseudo.text = new_name.to_upper()
+	_rename_popup.hide()

@@ -10,6 +10,7 @@ signal missions_changed
 const SAVE_PATH = "user://save_game.dat"
 
 # --- DONNÉES JOUEUR ---
+var player_name: String = "Joueur"
 var hp: int = 100
 var max_hp: int = 100
 var end: int = 100
@@ -23,7 +24,6 @@ var def: int = 6
 
 var inventory: Array = []
 var items_per_page: int = 45
-var current_tab: String = "missions"
 
 # --- CYCLES DU SYSTÈME ---
 var reset_duration: float = 14400.0 # 4 heures
@@ -114,6 +114,7 @@ func save_game():
 	var file = FileAccess.open(SAVE_PATH, FileAccess.WRITE)
 	if file:
 		var save_data = {
+			"player_name": player_name,
 			"hp": hp, "max_hp": max_hp, "lvl": lvl, "xp": xp, "stat_points": stat_points,
 			"end": end, "max_end": max_end,
 			"stats": stats, "inventory": inventory,
@@ -130,6 +131,7 @@ func load_game():
 	var file = FileAccess.open(SAVE_PATH, FileAccess.READ)
 	var save_data = JSON.parse_string(file.get_as_text())
 	if typeof(save_data) == TYPE_DICTIONARY:
+		player_name = save_data.get("player_name", "Joueur")
 		lvl = int(save_data.get("lvl", 1))
 		hp = int(save_data.get("hp", 100))
 		max_hp = int(save_data.get("max_hp", 100))
