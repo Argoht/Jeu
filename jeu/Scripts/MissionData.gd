@@ -28,7 +28,3 @@ enum Stat { AUCUNE, STR, DEX, VIT, INT, WIS, CHA, PER, WIL }
 @export var reward_stat: Stat = Stat.AUCUNE
 @export var reward_stat_amount: int = 0
 
-## Cette fonction servira plus tard pour le système d'adaptation dynamique
-func get_adapted_xp(player_rank: int) -> int:
-	# La logique de calcul du multiplicateur d'XP selon l'écart de rang ira ici
-	return base_xp

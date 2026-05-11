@@ -5,7 +5,6 @@ signal leveled_up(new_level)
 signal xp_gained(amount)
 signal mission_completed(xp_amount, stat_name, stat_amount)
 signal mission_failed(hp_lost)
-signal tab_changed(tab_name)
 signal missions_changed
 
 const SAVE_PATH = "user://save_game.dat"
@@ -17,14 +16,14 @@ var end: int = 100
 var max_end: int = 100
 var xp: int = 0
 var lvl: int = 1
-var stat_points: int = 0 
+var stat_points: int = 0
 
 var atk: int = 12
 var def: int = 6
 
 var inventory: Array = []
-var items_per_page: int = 45 
-var current_tab: String = "missions" 
+var items_per_page: int = 45
+var current_tab: String = "missions"
 
 # --- CYCLES DU SYSTÈME ---
 var reset_duration: float = 14400.0 # 4 heures
@@ -43,13 +42,13 @@ var _end_regen_acc: float = 0.0
 
 var stats: Dictionary = {
 	"str": 1, "dex": 1, "vit": 1, "int": 1,
-	"wis": 1, "per": 1, "cha": 1, "wil": 1, 
+	"wis": 1, "per": 1, "cha": 1, "wil": 1,
 	"spd": 100, "lck": 1
 }
 
-var all_missions: Dictionary = {} 
-var available_missions: Array = [] 
-var available_weekly_missions: Array = [] 
+var all_missions: Dictionary = {}
+var available_missions: Array = []
+var available_weekly_missions: Array = []
 
 func _ready():
 	randomize()
@@ -63,12 +62,12 @@ func _process(delta):
 		time_until_reset -= delta
 	else:
 		reset_daily_missions()
-	
+
 	if time_until_weekly_reset > 0:
 		time_until_weekly_reset -= delta
 	else:
 		reset_weekly_missions()
-	
+
 	auto_save_timer += delta
 	if auto_save_timer >= 30.0:
 		auto_save_timer = 0.0
@@ -142,7 +141,7 @@ func load_game():
 		inventory = save_data.get("inventory", [])
 		available_missions = save_data.get("available_missions", [])
 		available_weekly_missions = save_data.get("available_weekly_missions", [])
-		
+
 		var current_time = Time.get_unix_time_from_system()
 		var elapsed = current_time - float(save_data.get("last_save_time", current_time))
 		time_until_reset = max(0, float(save_data.get("time_until_reset", reset_duration)) - elapsed)
@@ -158,7 +157,7 @@ func generate_missions():
 		daily_pool.shuffle()
 		for i in range(min(5, daily_pool.size())):
 			available_missions.append({"id": daily_pool[i].id, "status": "available", "end_cost": 15})
-	
+
 	if available_weekly_missions.is_empty():
 		var weekly_pool = all_missions.values().filter(func(m): return m.type == 1 and m.rank <= rank_int)
 		if weekly_pool.size() > 0:
@@ -200,6 +199,7 @@ func process_mission_result(mission_dict: Dictionary, success: bool):
 			stat_name   = stat_keys[m_data.reward_stat]
 			stat_amount = m_data.reward_stat_amount
 			stats[stat_name] += stat_amount
+			update_derived_stats()
 		mission_completed.emit(m_data.base_xp, stat_name, stat_amount)
 		mission_dict["status"] = "completed"
 		check_level_up()
