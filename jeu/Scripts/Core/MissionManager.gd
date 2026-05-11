@@ -2,7 +2,7 @@ class_name MissionManager
 extends Node
 
 ## Owns mission state, generation, timers and result processing.
-## Communicates results to PlayerData through signals caught by GlobalEngine.
+## Uses duck typing for PlayerData to avoid class_name circular dependencies.
 
 # ── Signals ───────────────────────────────────────────────────────────────────
 
@@ -24,14 +24,13 @@ var time_until_reset: float = reset_duration
 var weekly_reset_duration: float = 604800.0  # 7 jours
 var time_until_weekly_reset: float = weekly_reset_duration
 
-# ── Internal reference ────────────────────────────────────────────────────────
+# ── Internal reference (duck-typed PlayerData) ────────────────────────────────
 
-var _player: PlayerData = null
+var _player = null
 
 # ── Setup ─────────────────────────────────────────────────────────────────────
 
-## Must be called by GlobalEngine before any other method.
-func initialize(player_data: PlayerData) -> void:
+func initialize(player_data) -> void:
 	_player = player_data
 
 # ── Godot lifecycle ───────────────────────────────────────────────────────────
@@ -66,7 +65,7 @@ func load_all_missions() -> void:
 
 func generate_missions() -> void:
 	if not _player: return
-	var rank_int := _player.get_rank_index(_player.lvl)
+	var rank_int: int = _player.get_rank_index(_player.lvl)
 
 	if available_missions.is_empty():
 		var daily_pool: Array = all_missions.values().filter(
@@ -95,12 +94,11 @@ func generate_missions() -> void:
 # ── Mission actions ───────────────────────────────────────────────────────────
 
 func accept_mission(mission_dict: Dictionary) -> bool:
-	var m_data: MissionData = all_missions.get(mission_dict.id)
+	var m_data: MissionData = all_missions.get(mission_dict.id) as MissionData
 	if not m_data: return false
 	if _player.hp <= 0: return false
 	if _player.stamina < mission_dict.end_cost: return false
 
-	# Vérifie les pré-requis de stats
 	var req_map := {
 		"str": m_data.req_str, "dex": m_data.req_dex, "vit": m_data.req_end,
 		"int": m_data.req_int, "wis": m_data.req_wis, "cha": m_data.req_cha,
@@ -116,7 +114,7 @@ func accept_mission(mission_dict: Dictionary) -> bool:
 	return true
 
 func process_result(mission_dict: Dictionary, success: bool) -> void:
-	var m_data: MissionData = all_missions.get(mission_dict.id)
+	var m_data: MissionData = all_missions.get(mission_dict.id) as MissionData
 	if not m_data: return
 
 	if success:

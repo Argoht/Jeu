@@ -2,14 +2,14 @@ class_name SaveSystem
 extends Node
 
 ## Handles serialization, deserialization, and corruption protection.
-## Keeps backward compatibility with saves created before the refactor.
+## Uses duck typing for PlayerData/MissionManager to avoid class_name circular deps.
 
 const SAVE_PATH = "user://save_game.dat"
 const SAVE_VERSION = 2
 
 # ── Public API ────────────────────────────────────────────────────────────────
 
-func save_game(player_data: PlayerData, mission_manager: MissionManager) -> void:
+func save_game(player_data, mission_manager) -> void:
 	var save_data := {
 		"version": SAVE_VERSION,
 		"player_name": player_data.player_name,
@@ -31,7 +31,7 @@ func save_game(player_data: PlayerData, mission_manager: MissionManager) -> void
 	if file:
 		file.store_string(JSON.stringify(save_data))
 
-func load_game(player_data: PlayerData, mission_manager: MissionManager) -> bool:
+func load_game(player_data, mission_manager) -> bool:
 	if not FileAccess.file_exists(SAVE_PATH):
 		return false
 
@@ -51,7 +51,7 @@ func load_game(player_data: PlayerData, mission_manager: MissionManager) -> bool
 
 # ── Private ───────────────────────────────────────────────────────────────────
 
-func _load_player(pd: PlayerData, data: Dictionary) -> void:
+func _load_player(pd, data: Dictionary) -> void:
 	pd.player_name = data.get("player_name", "Joueur")
 	pd.lvl         = int(data.get("lvl", 1))
 	pd.hp          = int(data.get("hp", 100))
@@ -66,19 +66,17 @@ func _load_player(pd: PlayerData, data: Dictionary) -> void:
 	# Compat: anciens saves utilisaient "stats" au lieu de "base_stats"
 	pd.base_stats  = data.get("base_stats", data.get("stats", pd.base_stats))
 
-func _load_missions(mm: MissionManager, data: Dictionary) -> void:
+func _load_missions(mm, data: Dictionary) -> void:
 	mm.available_missions        = data.get("available_missions", [])
 	mm.available_weekly_missions = data.get("available_weekly_missions", [])
 	mm.time_until_reset          = maxf(0.0, float(data.get("time_until_reset", mm.reset_duration)))
 	mm.time_until_weekly_reset   = maxf(0.0, float(data.get("time_until_weekly_reset", mm.weekly_reset_duration)))
 
-func _apply_offline_time(pd: PlayerData, mm: MissionManager, data: Dictionary) -> void:
+func _apply_offline_time(pd, mm, data: Dictionary) -> void:
 	var now     := Time.get_unix_time_from_system()
 	var elapsed := now - float(data.get("last_save_time", now))
 
-	# Décrémente les timers de mission
 	mm.time_until_reset        = maxf(0.0, mm.time_until_reset - elapsed)
 	mm.time_until_weekly_reset = maxf(0.0, mm.time_until_weekly_reset - elapsed)
 
-	# Régénération hors-ligne
 	pd.apply_offline_regen(elapsed)

@@ -3,10 +3,8 @@ extends Node
 ## Thin orchestrator — creates subsystems, wires their signals and exposes a
 ## backward-compatible surface so existing UI scripts need no changes.
 ##
-## Subsystem responsibilities:
-##   PlayerData     — stats, XP, level, HP, stamina, regen
-##   MissionManager — mission state, timers, generation, results
-##   SaveSystem     — serialization, corruption protection, offline recovery
+## Subsystems are loaded via preload() to guarantee compilation order
+## (autoloads are parsed before the global class_name registry is fully built).
 
 # ── Signals (re-emitted from subsystems for backward compat) ──────────────────
 
@@ -17,11 +15,14 @@ signal mission_completed(xp_amount: int, stat_name: String, stat_amount: int)
 signal mission_failed(hp_lost: int)
 signal missions_changed
 
-# ── Subsystems (accessible directly from UI if needed) ────────────────────────
+# ── Subsystems ────────────────────────────────────────────────────────────────
+# Untyped: autoloads are parsed before the global class_name registry is built,
+# so PlayerData / MissionManager / SaveSystem aren't resolvable as types here.
+# Runtime types are PlayerData, MissionManager, SaveSystem respectively.
 
-var player_data: PlayerData
-var mission_manager: MissionManager
-var save_system: SaveSystem
+var player_data     = null
+var mission_manager = null
+var save_system     = null
 
 # ── Inventory (will move to InventorySystem in a later step) ──────────────────
 
@@ -33,8 +34,6 @@ var items_per_page: int = 45
 var _auto_save_timer: float = 0.0
 
 # ── Backward-compatible computed properties ───────────────────────────────────
-# These let existing UI code (GlobalEngine.hp, GlobalEngine.stats, etc.)
-# work unchanged while data now lives in PlayerData / MissionManager.
 
 var player_name: String:
 	get: return player_data.player_name
@@ -48,7 +47,6 @@ var max_hp: int:
 	get: return player_data.max_hp
 	set(v): player_data.max_hp = v
 
-# "end" maps to player_data.stamina (renamed for clarity)
 var end: int:
 	get: return player_data.stamina
 	set(v): player_data.stamina = v
@@ -75,7 +73,6 @@ var atk: int:
 var def: int:
 	get: return player_data.def
 
-# Dictionary is a reference type — modifications go straight to PlayerData.
 var stats: Dictionary:
 	get: return player_data.base_stats
 	set(v): player_data.base_stats = v
@@ -92,9 +89,9 @@ var available_weekly_missions: Array:
 # ── Lifecycle ─────────────────────────────────────────────────────────────────
 
 func _ready() -> void:
-	player_data     = PlayerData.new()
-	mission_manager = MissionManager.new()
-	save_system     = SaveSystem.new()
+	player_data     = preload("res://Scripts/Core/PlayerData.gd").new()
+	mission_manager = preload("res://Scripts/Core/MissionManager.gd").new()
+	save_system     = preload("res://Scripts/Core/SaveSystem.gd").new()
 
 	add_child(player_data)
 	add_child(mission_manager)
@@ -141,9 +138,9 @@ func add_stat(stat_name: String) -> void:
 	save_game()
 
 func accept_mission(mission_dict: Dictionary) -> bool:
-	var ok := mission_manager.accept_mission(mission_dict)
-	if ok: save_game()
-	return ok
+	var result: bool = mission_manager.accept_mission(mission_dict)
+	if result: save_game()
+	return result
 
 func process_mission_result(mission_dict: Dictionary, success: bool) -> void:
 	mission_manager.process_result(mission_dict, success)
