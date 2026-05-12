@@ -104,6 +104,7 @@ func _ready() -> void:
 	add_child(mission_manager)
 	add_child(save_system)
 	add_child(inventory_system)
+	inventory_system.load_database()
 
 	mission_manager.initialize(player_data)
 
@@ -196,6 +197,16 @@ func debug_add_level() -> void:
 	player_data.leveled_up.emit(player_data.lvl)
 	player_data.stats_updated.emit()
 	save_game()
+
+## Returns the Texture2D icon for an item dict, or null if no template/icon.
+func get_item_icon(item: Dictionary): # -> Texture2D or null
+	var tid: String = item.get("template_id", "")
+	if tid.is_empty(): return null
+	var db = inventory_system._item_db
+	if db == null: return null
+	var tmpl = db.get_template(tid)
+	if tmpl == null: return null
+	return tmpl.icon
 
 func debug_add_loot() -> Dictionary:
 	var item: Dictionary = inventory_system.generate_loot(player_data.lvl)

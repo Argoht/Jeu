@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="ItemData" format=3]
+
+[ext_resource type="Script" path="res://Scripts/Resources/ItemData.gd" id="1_itemdata"]
+
+[resource]
+script = ExtResource("1_itemdata")
+id = "epee_fer"
+item_name = "Épée de Fer"
+description = "Une épée de fer forgé, fiable et robuste."
+item_type = 0
+base_power = 15
+stat_pool = PackedStringArray("str", "dex")

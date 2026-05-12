@@ -144,10 +144,15 @@ func update_inventory_display() -> void:
 		if item_idx < GlobalEngine.inventory.size():
 			var item: Dictionary = GlobalEngine.inventory[item_idx]
 			var btn := Button.new()
-			btn.text = _type_icon(item.get("type", ""))
+			var icon_tex = GlobalEngine.get_item_icon(item)
+			if icon_tex != null:
+				btn.icon = icon_tex
+				btn.expand_icon = true
+			else:
+				btn.text = _type_icon(item.get("type", ""))
+				btn.add_theme_font_size_override("font_size", 22)
 			btn.flat = true
 			btn.alignment = HORIZONTAL_ALIGNMENT_CENTER
-			btn.add_theme_font_size_override("font_size", 22)
 			btn.add_theme_color_override("font_color", _rarity_color(item.get("rarity", "common")))
 			btn.pressed.connect(_popup_manager.show_item_details.bind(item))
 			slot.add_child(btn)

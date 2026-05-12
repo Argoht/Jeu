@@ -4,7 +4,8 @@ extends Node
 ## Items are stored as JSON-friendly Dictionaries — see LootGenerator.gd.
 ## Emits inventory_changed whenever the items list or equipment is mutated.
 
-const LootGen = preload("res://Scripts/Core/LootGenerator.gd")
+const LootGen  = preload("res://Scripts/Core/LootGenerator.gd")
+const ItemDB   = preload("res://Scripts/Core/ItemDatabase.gd")
 
 # ── Signals ───────────────────────────────────────────────────────────────────
 
@@ -26,6 +27,15 @@ var equipment: Dictionary = {
 	"weapon": null, "armor": null, "accessory": null
 }
 
+var _item_db = null  # ItemDatabase node
+
+# ── Lifecycle ─────────────────────────────────────────────────────────────────
+
+func load_database() -> void:
+	_item_db = ItemDB.new()
+	add_child(_item_db)
+	_item_db.load_all()
+
 # ── Public API: items ─────────────────────────────────────────────────────────
 
 func add_item(item: Dictionary) -> bool:
@@ -45,7 +55,7 @@ func remove_item_at(index: int) -> Dictionary:
 	return removed
 
 func generate_loot(player_level: int) -> Dictionary:
-	var item: Dictionary = LootGen.generate(player_level)
+	var item: Dictionary = LootGen.generate(player_level, _item_db)
 	add_item(item)
 	return item
 

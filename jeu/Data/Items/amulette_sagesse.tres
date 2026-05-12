@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="ItemData" format=3]
+
+[ext_resource type="Script" path="res://Scripts/Resources/ItemData.gd" id="1_itemdata"]
+
+[resource]
+script = ExtResource("1_itemdata")
+id = "amulette_sagesse"
+item_name = "Amulette de Sagesse"
+description = "Pierre ancienne qui éveille l'esprit de son porteur."
+item_type = 2
+base_power = 8
+stat_pool = PackedStringArray("int", "wis", "per")

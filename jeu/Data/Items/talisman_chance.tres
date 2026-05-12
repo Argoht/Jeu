@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="ItemData" format=3]
+
+[ext_resource type="Script" path="res://Scripts/Resources/ItemData.gd" id="1_itemdata"]
+
+[resource]
+script = ExtResource("1_itemdata")
+id = "talisman_chance"
+item_name = "Talisman de Chance"
+description = "Porte-bonheur inscrit de symboles mystérieux."
+item_type = 2
+base_power = 7
+stat_pool = PackedStringArray("lck", "cha", "per")

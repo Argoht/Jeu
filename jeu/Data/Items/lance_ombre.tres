@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="ItemData" format=3]
+
+[ext_resource type="Script" path="res://Scripts/Resources/ItemData.gd" id="1_itemdata"]
+
+[resource]
+script = ExtResource("1_itemdata")
+id = "lance_ombre"
+item_name = "Lance de l'Ombre"
+description = "Forgée dans l'obscurité, elle frappe à distance."
+item_type = 0
+base_power = 14
+stat_pool = PackedStringArray("str", "dex", "per")

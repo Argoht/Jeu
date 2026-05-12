@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="ItemData" format=3]
+
+[ext_resource type="Script" path="res://Scripts/Resources/ItemData.gd" id="1_itemdata"]
+
+[resource]
+script = ExtResource("1_itemdata")
+id = "robe_mage"
+item_name = "Robe du Mage"
+description = "Tissée de fils enchantés, amplifie l'intellect."
+item_type = 1
+base_power = 11
+stat_pool = PackedStringArray("int", "wil", "per")
