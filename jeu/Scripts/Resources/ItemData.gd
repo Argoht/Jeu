@@ -5,6 +5,9 @@ extends Resource
 ## LootGenerator — this Resource defines visual identity and generation rules.
 
 enum ItemType { WEAPON, ARMOR, ACCESSORY }
+enum Rarity { COMMON, RARE, EPIC, LEGENDARY, MYTHIC }
+
+const RARITY_KEYS: Array[String] = ["common", "rare", "epic", "legendary", "mythic"]
 
 # ── Export fields ─────────────────────────────────────────────────────────────
 

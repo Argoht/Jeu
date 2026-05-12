@@ -6,6 +6,7 @@ extends Node
 
 const LootGen  = preload("res://Scripts/Core/LootGenerator.gd")
 const ItemDB   = preload("res://Scripts/Core/ItemDatabase.gd")
+const StatTypes = preload("res://Scripts/Core/StatTypes.gd")
 
 # ── Signals ───────────────────────────────────────────────────────────────────
 
@@ -93,7 +94,7 @@ func get_equipment_bonuses() -> Dictionary:
 	for slot in EQUIP_SLOTS:
 		var piece = equipment.get(slot)
 		if piece == null: continue
-		var bonuses: Dictionary = piece.get("stat_bonuses", {})
+		var bonuses := StatTypes.normalize_bonus_stats(piece.get("stat_bonuses", {}))
 		for stat_key in bonuses:
 			total[stat_key] = total.get(stat_key, 0) + int(bonuses[stat_key])
 	return total

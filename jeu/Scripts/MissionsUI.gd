@@ -167,10 +167,10 @@ func _create_card(m_dict: Dictionary, is_weekly: bool) -> PanelContainer:
 	desc.add_theme_color_override("font_color", Color(0.68, 0.68, 0.68))
 	v.add_child(desc)
 
-	var stat_names = ["", "STR", "DEX", "VIT", "INT", "WIS", "CHA", "PER", "WIL"]
 	var rew_txt = "+" + str(m_data.base_xp) + " XP"
-	if m_data.reward_stat != 0:
-		rew_txt += "  +" + str(m_data.reward_stat_amount) + " " + stat_names[m_data.reward_stat]
+	var reward_stat_key: String = m_data.get_reward_stat_key()
+	if not reward_stat_key.is_empty():
+		rew_txt += "  +" + str(m_data.reward_stat_amount) + " " + reward_stat_key
 	var rew = Label.new()
 	rew.text = rew_txt
 	rew.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER

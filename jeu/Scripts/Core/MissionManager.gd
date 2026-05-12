@@ -99,18 +99,16 @@ func accept_mission(mission_dict: Dictionary) -> bool:
 	if _player.hp <= 0: return false
 	if _player.stamina < mission_dict.end_cost: return false
 
-	var req_map := {
-		"str": m_data.req_str, "dex": m_data.req_dex, "vit": m_data.req_end,
-		"int": m_data.req_int, "wis": m_data.req_wis, "cha": m_data.req_cha,
-		"per": m_data.req_per, "wil": m_data.req_wil
-	}
+	var req_map := m_data.get_requirement_map()
 	for stat_key in req_map:
 		if _player.get_final_stat(stat_key) < req_map[stat_key]:
 			return false
 
-	_player.stamina -= mission_dict.end_cost
+	if not _player.spend_stamina(mission_dict.end_cost):
+		return false
+
 	mission_dict["status"] = "in_progress"
-	_player.stats_updated.emit()
+	missions_changed.emit()
 	return true
 
 func process_result(mission_dict: Dictionary, success: bool) -> void:
@@ -118,23 +116,17 @@ func process_result(mission_dict: Dictionary, success: bool) -> void:
 	if not m_data: return
 
 	if success:
-		var stat_name := ""
+		var stat_name := m_data.get_reward_stat_key()
 		var stat_amount := 0
-		if m_data.reward_stat != 0:
-			var stat_keys := ["", "str", "dex", "vit", "int", "wis", "cha", "per", "wil"]
-			stat_name   = stat_keys[m_data.reward_stat]
+		if not stat_name.is_empty():
 			stat_amount = m_data.reward_stat_amount
-			_player.base_stats[stat_name] += stat_amount
-			_player.update_derived_stats()
-		_player.add_xp(m_data.base_xp)
-		mission_completed.emit(m_data.base_xp, stat_name, stat_amount)
 		mission_dict["status"] = "completed"
+		mission_completed.emit(m_data.base_xp, stat_name, stat_amount)
 	else:
-		_player.take_damage(20)
 		mission_dict["status"] = "failed"
 		mission_failed.emit(20)
 
-	_player.stats_updated.emit()
+	missions_changed.emit()
 
 # ── Timer strings ─────────────────────────────────────────────────────────────
 

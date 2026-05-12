@@ -75,8 +75,8 @@ var def: int:
 	get: return player_data.def
 
 var stats: Dictionary:
-	get: return player_data.base_stats
-	set(v): player_data.base_stats = v
+	get: return player_data.get_stats_view()
+	set(v): player_data.set_base_stats(v)
 
 var all_missions: Dictionary:
 	get: return mission_manager.all_missions
@@ -133,10 +133,8 @@ func _connect_signals() -> void:
 	player_data.xp_gained.connect(func(a: int): xp_gained.emit(a))
 	player_data.leveled_up.connect(func(l: int): leveled_up.emit(l))
 
-	mission_manager.mission_completed.connect(
-		func(xp_r: int, s: String, a: int): mission_completed.emit(xp_r, s, a)
-	)
-	mission_manager.mission_failed.connect(func(h: int): mission_failed.emit(h))
+	mission_manager.mission_completed.connect(_on_mission_completed)
+	mission_manager.mission_failed.connect(_on_mission_failed)
 	mission_manager.missions_changed.connect(func(): missions_changed.emit())
 
 	inventory_system.inventory_changed.connect(_on_inventory_changed)
@@ -145,6 +143,16 @@ func _on_inventory_changed() -> void:
 	# Recalcule les bonus d'équipement → PlayerData.stats_updated → UI refresh
 	player_data.set_equipment_bonuses(inventory_system.get_equipment_bonuses())
 	inventory_changed.emit()
+
+func _on_mission_completed(xp_reward: int, stat_key: String, stat_amount: int) -> void:
+	if not stat_key.is_empty() and stat_amount != 0:
+		player_data.add_base_stat(stat_key, stat_amount)
+	player_data.add_xp(xp_reward)
+	mission_completed.emit(xp_reward, stat_key, stat_amount)
+
+func _on_mission_failed(hp_lost: int) -> void:
+	player_data.take_damage(hp_lost)
+	mission_failed.emit(hp_lost)
 
 # ── Delegated public API (backward compat) ────────────────────────────────────
 
@@ -181,6 +189,9 @@ func get_rank_by_level(l: int) -> String:
 
 func update_derived_stats() -> void:
 	player_data.update_derived_stats()
+
+func get_final_stat(stat_key) -> int:
+	return player_data.get_final_stat(stat_key)
 
 # ── Debug helpers ─────────────────────────────────────────────────────────────
 

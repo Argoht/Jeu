@@ -1,17 +1,17 @@
 class_name PlayerData
 extends Node
 
+const StatTypes = preload("res://Scripts/Core/StatTypes.gd")
+
 ## Holds all player state: stats, XP, level, HP, stamina and passive regen.
 ## Never modify stats directly from outside — use add_stat() and get_final_stat().
 
 # ── Enums ──────────────────────────────────────────────────────────────────────
 
-enum StatType { STR, DEX, VIT, INT, WIS, CHA, PER, WIL, SPD, LCK }
+enum StatType { STR, INT, WIL, AGI, HP, STAMINA }
 
 # String keys matching the enum order — used for Dictionary access and JSON save.
-const STAT_KEYS: Array[String] = [
-	"str", "dex", "vit", "int", "wis", "cha", "per", "wil", "spd", "lck"
-]
+const STAT_KEYS: Array[String] = ["STR", "INT", "WIL", "AGI", "HP", "STAMINA"]
 
 # ── Signals ───────────────────────────────────────────────────────────────────
 
@@ -44,15 +44,19 @@ var def: int = 6
 # ── Base stats (editable via stat points) ─────────────────────────────────────
 
 var base_stats: Dictionary = {
-	"str": 1, "dex": 1, "vit": 1, "int": 1,
-	"wis": 1, "cha": 1, "per": 1, "wil": 1,
-	"spd": 100, "lck": 1
+	"STR": 1,
+	"INT": 1,
+	"WIL": 1,
+	"AGI": 1,
+	"HP": 100,
+	"STAMINA": 100,
 }
 
 # ── Bonus layers (added on top of base_stats in get_final_stat) ───────────────
 
-var _equipment_bonuses: Dictionary = {}     # { "str": 5, ... }
-var _temp_buffs: Dictionary = {}            # { "str": [{ "amount": 3, "duration": 60.0 }] }
+var _equipment_bonuses: Dictionary = {}     # { "STR": 5, ... }
+var _temp_buffs: Dictionary = {}            # { "STR": [{ "amount": 3, "duration": 60.0 }] }
+var _passive_bonuses: Dictionary = {}       # { "STR": 1, ... }
 
 # ── Regen constants ───────────────────────────────────────────────────────────
 
@@ -84,33 +88,65 @@ func _process(delta: float) -> void:
 
 # ── Stat access ───────────────────────────────────────────────────────────────
 
-## Final value of a stat = base + equipment bonus + active buffs.
+## Final value of a stat = base + equipment bonus + active buffs + passives.
 ## Always use this instead of reading base_stats directly.
-func get_final_stat(stat_key: String) -> int:
-	var base: int = base_stats.get(stat_key, 0)
-	var equip: int = _equipment_bonuses.get(stat_key, 0)
+func get_final_stat(stat_key) -> int:
+	var key: String = StatTypes.normalize_key(stat_key)
+	if key.is_empty():
+		return 0
+
+	var base: int = base_stats.get(key, 0)
+	var equip: int = _equipment_bonuses.get(key, 0)
+	var passive: int = _passive_bonuses.get(key, 0)
 	var buff: int = 0
-	if _temp_buffs.has(stat_key):
-		for b in _temp_buffs[stat_key]:
+	if _temp_buffs.has(key):
+		for b in _temp_buffs[key]:
 			buff += b.get("amount", 0)
-	return base + equip + buff
+	return base + equip + passive + buff
 
 ## Type-safe enum accessor.
 func get_stat(stat_type: StatType) -> int:
 	return get_final_stat(STAT_KEYS[stat_type])
 
+func set_base_stats(stats_data: Dictionary) -> void:
+	base_stats = StatTypes.normalize_base_stats(stats_data, max_hp, max_stamina)
+	update_derived_stats()
+	stats_updated.emit()
+
+func get_stats_view() -> Dictionary:
+	var view: Dictionary = {}
+	for key in StatTypes.STAT_KEYS:
+		view[key] = get_final_stat(key)
+	for legacy_key in StatTypes.LEGACY_STAT_KEYS:
+		view[legacy_key] = get_final_stat(legacy_key)
+	return view
+
+func add_base_stat(stat_key, amount: int = 1) -> void:
+	var key: String = StatTypes.normalize_key(stat_key)
+	if key.is_empty():
+		return
+	base_stats[key] = int(base_stats.get(key, 0)) + amount
+	update_derived_stats()
+	stats_updated.emit()
+
 ## Spend one stat point to raise a stat by 1.
-func add_stat(stat_key: String) -> void:
-	if stat_points > 0 and base_stats.has(stat_key):
-		base_stats[stat_key] += 1
-		stat_points -= 1
-		update_derived_stats()
-		stats_updated.emit()
+func add_stat(stat_key) -> void:
+	if stat_points <= 0:
+		return
+	if not StatTypes.is_valid_key(stat_key):
+		return
+	stat_points -= 1
+	add_base_stat(stat_key, 1)
 
 ## Replace the equipment bonus layer (called by GlobalEngine when inventory changes).
 ## Triggers a recompute of derived combat stats and notifies the UI.
 func set_equipment_bonuses(bonuses: Dictionary) -> void:
-	_equipment_bonuses = bonuses
+	_equipment_bonuses = StatTypes.normalize_bonus_stats(bonuses)
+	update_derived_stats()
+	stats_updated.emit()
+
+func set_passive_bonuses(bonuses: Dictionary) -> void:
+	_passive_bonuses = StatTypes.normalize_bonus_stats(bonuses)
 	update_derived_stats()
 	stats_updated.emit()
 
@@ -120,15 +156,28 @@ func add_xp(amount: int) -> void:
 	xp += amount
 	xp_gained.emit(amount)
 	_check_level_up()
+	stats_updated.emit()
 
 func take_damage(amount: int) -> void:
 	hp = max(0, hp - amount)
 	stats_updated.emit()
 
+func spend_stamina(amount: int) -> bool:
+	if stamina < amount:
+		return false
+	stamina -= amount
+	stats_updated.emit()
+	return true
+
 ## Recalculate ATK and DEF from base stats.
 func update_derived_stats() -> void:
-	atk = 10 + (get_final_stat("str") * 2)
-	def = int(5 + (float(get_final_stat("vit")) * 1.5))
+	max_hp = maxi(1, get_final_stat(StatTypes.KEY_HP))
+	max_stamina = maxi(1, get_final_stat(StatTypes.KEY_STAMINA))
+	hp = clampi(hp, 0, max_hp)
+	stamina = clampi(stamina, 0, max_stamina)
+
+	atk = 10 + (get_final_stat(StatTypes.KEY_STR) * 2) + get_final_stat(StatTypes.KEY_AGI)
+	def = 5 + int(float(get_final_stat(StatTypes.KEY_HP)) * 0.1) + get_final_stat(StatTypes.KEY_WIL)
 
 ## Apply passive HP/stamina regen for time spent offline.
 func apply_offline_regen(elapsed_seconds: float) -> void:

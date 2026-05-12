@@ -1,5 +1,7 @@
 extends RefCounted
 
+const StatTypes = preload("res://Scripts/Core/StatTypes.gd")
+
 ## Stateless loot factory. When an ItemDatabase is provided, picks a random
 ## template to determine the item name and stat pool. Rarity is always rolled
 ## at generation time regardless of whether a template is used.
@@ -32,9 +34,9 @@ const FALLBACK_NAMES: Dictionary = {
 }
 
 const FALLBACK_STATS: Dictionary = {
-	"weapon":    ["str", "dex"],
-	"armor":     ["vit", "wil"],
-	"accessory": ["int", "wis", "per", "cha", "lck"]
+	"weapon":    ["STR", "AGI"],
+	"armor":     ["HP", "WIL"],
+	"accessory": ["INT", "WIL"]
 }
 
 # ── Public API ────────────────────────────────────────────────────────────────
@@ -100,6 +102,9 @@ static func _roll_bonuses(pool: Array, rarity_idx: int, player_level: int, mult:
 	shuffled.shuffle()
 	var bonuses: Dictionary = {}
 	for i in range(mini(num_stats, shuffled.size())):
+		var stat_key := StatTypes.normalize_key(shuffled[i])
+		if stat_key.is_empty():
+			continue
 		var amount: int = int(float(player_level) * 0.3 * mult) + randi_range(1, 3)
-		bonuses[shuffled[i]] = amount
+		bonuses[stat_key] = int(bonuses.get(stat_key, 0)) + amount
 	return bonuses

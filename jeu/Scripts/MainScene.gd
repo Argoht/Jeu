@@ -1,6 +1,7 @@
 extends Control
 
 const MISSIONS_SCENE = preload("res://Scenes/MissionsUI.tscn")
+const CORE_STAT_KEYS: Array[String] = ["STR", "INT", "WIL", "AGI", "HP", "STAMINA"]
 
 # ── Nœuds de la scène (chemins conservés — refactor UI complet à l'étape 3) ──
 
@@ -23,13 +24,12 @@ const MISSIONS_SCENE = preload("res://Scenes/MissionsUI.tscn")
 @onready var btn_next     = $VBox/GameZone/VBox/InvPanel/Margin/VBox/Header/BtnNext
 
 @onready var stats_labels = {
-	"str": get_node_or_null("VBox/GameZone/VBox/StatsFrame/Margin/StatsGrid/Str/Val"),
-	"dex": get_node_or_null("VBox/GameZone/VBox/StatsFrame/Margin/StatsGrid/Dex/Val"),
-	"int": get_node_or_null("VBox/GameZone/VBox/StatsFrame/Margin/StatsGrid/Int/Val"),
-	"vit": get_node_or_null("VBox/GameZone/VBox/StatsFrame/Margin/StatsGrid/Vit/Val"),
-	"wil": get_node_or_null("VBox/GameZone/VBox/StatsFrame/Margin/StatsGrid/Wil/Val"),
-	"per": get_node_or_null("VBox/GameZone/VBox/StatsFrame/Margin/StatsGrid/Per/Val"),
-	"cha": get_node_or_null("VBox/GameZone/VBox/StatsFrame/Margin/StatsGrid/Cha/Val"),
+	"STR": get_node_or_null("VBox/GameZone/VBox/StatsFrame/Margin/StatsGrid/Str/Val"),
+	"AGI": get_node_or_null("VBox/GameZone/VBox/StatsFrame/Margin/StatsGrid/Dex/Val"),
+	"INT": get_node_or_null("VBox/GameZone/VBox/StatsFrame/Margin/StatsGrid/Int/Val"),
+	"HP": get_node_or_null("VBox/GameZone/VBox/StatsFrame/Margin/StatsGrid/Vit/Val"),
+	"WIL": get_node_or_null("VBox/GameZone/VBox/StatsFrame/Margin/StatsGrid/Wil/Val"),
+	"STAMINA": get_node_or_null("VBox/GameZone/VBox/StatsFrame/Margin/StatsGrid/Per/Val"),
 	"atk": get_node_or_null("VBox/GameZone/VBox/StatsFrame/Margin/StatsGrid/Atk/Val"),
 	"def": get_node_or_null("VBox/GameZone/VBox/StatsFrame/Margin/StatsGrid/Def/Val")
 }
@@ -42,9 +42,32 @@ var total_pages:  int = 5
 var _missions_panel: Control = null
 var _popup_manager  = null   # PopupManager (preloaded)
 
+func _apply_canonical_stat_labels() -> void:
+	var label_paths := {
+		"Str": "STR",
+		"Dex": "AGI",
+		"Int": "INT",
+		"Vit": "HP",
+		"Wil": "WIL",
+		"Per": "STAMINA",
+		"Atk": "ATK",
+		"Def": "DEF",
+	}
+	for node_name in label_paths.keys():
+		var lab = get_node_or_null("VBox/GameZone/VBox/StatsFrame/Margin/StatsGrid/%s/Lab" % node_name)
+		if is_instance_valid(lab):
+			lab.text = label_paths[node_name]
+
+	for old_node_name in ["Cha", "Lck"]:
+		var old_node = get_node_or_null("VBox/GameZone/VBox/StatsFrame/Margin/StatsGrid/%s" % old_node_name)
+		if is_instance_valid(old_node):
+			old_node.hide()
+
 # ── Lifecycle ─────────────────────────────────────────────────────────────────
 
 func _ready() -> void:
+	_apply_canonical_stat_labels()
+
 	# Navigation
 	$VBox/Nav/NavVBox/Row1/Button1.pressed.connect(_on_nav_pressed.bind("Personnage"))
 	$VBox/Nav/NavVBox/Row1/Button3.pressed.connect(_on_nav_pressed.bind("Missions"))
@@ -109,6 +132,8 @@ func update_ui() -> void:
 			label.text = str(GlobalEngine.atk)
 		elif s_key == "def":
 			label.text = str(GlobalEngine.def)
+		elif s_key in CORE_STAT_KEYS:
+			label.text = str(GlobalEngine.get_final_stat(s_key))
 		elif GlobalEngine.stats.has(s_key):
 			label.text = str(GlobalEngine.stats[s_key])
 
@@ -253,4 +278,3 @@ func _build_debug_bar() -> void:
 
 	$VBox.add_child(panel)
 	$VBox.move_child(panel, 0)
-

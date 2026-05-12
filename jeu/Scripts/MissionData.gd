@@ -1,6 +1,8 @@
 class_name MissionData
 extends Resource
 
+const StatTypes = preload("res://Scripts/Core/StatTypes.gd")
+
 ## Énumérations pour structurer les données proprement
 enum Rank { F, E, D, C, B, A, S }
 enum MissionType { QUOTIDIENNE, HEBDOMADAIRE }
@@ -28,3 +30,28 @@ enum Stat { AUCUNE, STR, DEX, VIT, INT, WIS, CHA, PER, WIL }
 @export var reward_stat: Stat = Stat.AUCUNE
 @export var reward_stat_amount: int = 0
 
+func get_requirement_map() -> Dictionary:
+	return StatTypes.normalize_requirements({
+		"STR": req_str,
+		"AGI": req_dex,
+		"STAMINA": req_end,
+		"INT": req_int,
+		"wis": req_wis,
+		"cha": req_cha,
+		"per": req_per,
+		"WIL": req_wil,
+	})
+
+func get_reward_stat_key() -> String:
+	match reward_stat:
+		Stat.STR:
+			return StatTypes.KEY_STR
+		Stat.DEX:
+			return StatTypes.KEY_AGI
+		Stat.VIT:
+			return StatTypes.KEY_HP
+		Stat.INT:
+			return StatTypes.KEY_INT
+		Stat.WIS, Stat.CHA, Stat.PER, Stat.WIL:
+			return StatTypes.KEY_WIL
+	return ""

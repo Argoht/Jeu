@@ -66,8 +66,8 @@ func _load_player(pd, data: Dictionary) -> void:
 	pd.stamina     = int(data.get("stamina", data.get("end", 100)))
 	pd.max_stamina = int(data.get("max_stamina", data.get("max_end", 100)))
 
-	# Compat: anciens saves utilisaient "stats" au lieu de "base_stats"
-	pd.base_stats  = data.get("base_stats", data.get("stats", pd.base_stats))
+	# Compat: anciens saves utilisaient "stats" au lieu de "base_stats".
+	pd.set_base_stats(data.get("base_stats", data.get("stats", pd.base_stats)))
 
 func _load_missions(mm, data: Dictionary) -> void:
 	mm.available_missions        = data.get("available_missions", [])
