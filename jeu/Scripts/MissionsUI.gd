@@ -3,39 +3,45 @@ extends MarginContainer
 var _main_vbox: VBoxContainer
 var _daily_vbox: VBoxContainer
 var _timer_acc: float = 0.0
-var _panel_style: StyleBoxFlat
 
 func _ready():
-	size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	size_flags_vertical = Control.SIZE_EXPAND_FILL
+	# Pas de marges sur le MarginContainer racine : GameZone en fournit déjà.
+	# Le PanelContainer ci-dessous gère le fond et le padding interne (10 px),
+	# identique à HeroFrame / StatsFrame / InvPanel.
+	add_theme_constant_override("margin_left",   0)
+	add_theme_constant_override("margin_right",  0)
+	add_theme_constant_override("margin_top",    0)
+	add_theme_constant_override("margin_bottom", 0)
 
-	# Style identique aux panels HeroFrame/StatsFrame de l'onglet Personnage
-	_panel_style = StyleBoxFlat.new()
-	_panel_style.bg_color = Color(0.043, 0.047, 0.059, 1)
-	_panel_style.border_width_left = 1; _panel_style.border_width_top = 1
-	_panel_style.border_width_right = 1; _panel_style.border_width_bottom = 1
-	_panel_style.border_color = Color(0.149, 0.173, 0.212, 1)
-	_panel_style.corner_radius_top_left = 4; _panel_style.corner_radius_top_right = 4
-	_panel_style.corner_radius_bottom_right = 4; _panel_style.corner_radius_bottom_left = 4
+	# Fond — même style que les panels de l'onglet Personnage
+	var panel_style := StyleBoxFlat.new()
+	panel_style.bg_color     = Color(0.043, 0.047, 0.059, 1)
+	panel_style.border_width_left   = 1; panel_style.border_width_top    = 1
+	panel_style.border_width_right  = 1; panel_style.border_width_bottom = 1
+	panel_style.border_color        = Color(0.149, 0.173, 0.212, 1)
+	panel_style.corner_radius_top_left    = 4; panel_style.corner_radius_top_right   = 4
+	panel_style.corner_radius_bottom_right = 4; panel_style.corner_radius_bottom_left = 4
 
-	# Marges internes identiques aux panels Personnage (15px)
-	add_theme_constant_override("margin_left", 15)
-	add_theme_constant_override("margin_right", 15)
-	add_theme_constant_override("margin_top", 10)
-	add_theme_constant_override("margin_bottom", 10)
+	var bg := PanelContainer.new()
+	bg.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	bg.size_flags_vertical   = Control.SIZE_EXPAND_FILL
+	bg.add_theme_stylebox_override("panel", panel_style)
+	add_child(bg)
+
+	# Padding interne 10 px (idem HeroFrame / StatsFrame)
+	var inner := MarginContainer.new()
+	for side in ["margin_left", "margin_right", "margin_top", "margin_bottom"]:
+		inner.add_theme_constant_override(side, 10)
+	bg.add_child(inner)
 
 	_main_vbox = VBoxContainer.new()
 	_main_vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_main_vbox.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_main_vbox.size_flags_vertical   = Control.SIZE_EXPAND_FILL
 	_main_vbox.add_theme_constant_override("separation", 14)
-	add_child(_main_vbox)
+	inner.add_child(_main_vbox)
 
 	GlobalEngine.missions_changed.connect(_build_static_ui)
 	_build_static_ui()
-
-func _draw():
-	if _panel_style:
-		_panel_style.draw(get_canvas_item(), Rect2(Vector2.ZERO, size))
 
 func _build_static_ui():
 	for child in _main_vbox.get_children(): child.queue_free()
@@ -57,12 +63,12 @@ func _build_static_ui():
 	t_weekly.add_theme_font_size_override("font_size", 13)
 	_main_vbox.add_child(t_weekly)
 
-	# Section quotidienne avec son propre scroll
+	# Section quotidienne avec scroll
 	_add_section_header("MISSIONS QUOTIDIENNES", Color("#00f2ff"))
 
 	var daily_scroll = ScrollContainer.new()
 	daily_scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	daily_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	daily_scroll.size_flags_vertical   = Control.SIZE_EXPAND_FILL
 	daily_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	_main_vbox.add_child(daily_scroll)
 
@@ -73,7 +79,7 @@ func _build_static_ui():
 
 	_refresh_daily_cards()
 
-	# Section hebdomadaire fixe en bas
+	# Section hebdomadaire
 	_add_section_header("MISSION HEBDOMADAIRE", Color("#d15cff"))
 
 	if GlobalEngine.available_weekly_missions.is_empty():

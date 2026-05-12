@@ -60,8 +60,6 @@ func _ready() -> void:
 
 	# Panel missions (permanent, affiché/caché comme les autres panels)
 	_missions_panel = MISSIONS_SCENE.instantiate()
-	_missions_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_missions_panel.size_flags_vertical   = Control.SIZE_EXPAND_FILL
 	game_zone_vbox.add_child(_missions_panel)
 	_missions_panel.hide()
 

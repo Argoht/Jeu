@@ -3,6 +3,7 @@
 [ext_resource type="Script" uid="uid://dxihhinhq7la2" path="res://Scripts/MissionsUI.gd" id="1_d57hn"]
 
 [node name="MissionsUI" type="MarginContainer" unique_id=997653016]
-offset_right = 40.0
-offset_bottom = 40.0
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
 script = ExtResource("1_d57hn")
