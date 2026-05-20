@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="MissionData" format=3 uid="uid://a08comp"]
+
+[ext_resource type="Script" uid="uid://7q6sivsis1nj" path="res://Scripts/Resources/MissionData.gd" id="1_a08cp"]
+
+[resource]
+script = ExtResource("1_a08cp")
+id = "a_competence"
+title = "Calcul de Bataille"
+description = "Apprendre une compétence avancée pendant 2 heures."
+rank = 5
+req_int = 40
+base_xp = 5000
+reward_stat = 4
+reward_stat_amount = 2

@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="MissionData" format=3 uid="uid://c04resp"]
+
+[ext_resource type="Script" uid="uid://7q6sivsis1nj" path="res://Scripts/Resources/MissionData.gd" id="1_c04rs"]
+
+[resource]
+script = ExtResource("1_c04rs")
+id = "c_respiration"
+title = "Double Cohérence"
+description = "Faire deux sessions de cohérence cardiaque dans la journée."
+rank = 3
+req_wis = 14
+base_xp = 1200
+reward_stat = 5
+reward_stat_amount = 1

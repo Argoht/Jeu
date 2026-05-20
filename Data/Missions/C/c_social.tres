@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="MissionData" format=3 uid="uid://cnw07soc"]
+
+[ext_resource type="Script" uid="uid://7q6sivsis1nj" path="res://Scripts/Resources/MissionData.gd" id="1_cnw07"]
+
+[resource]
+script = ExtResource("1_cnw07")
+id = "c_social"
+title = "Connexion"
+description = "Engager une conversation significative et renforcer un lien social."
+rank = 3
+req_cha = 14
+base_xp = 1100
+reward_stat = 6
+reward_stat_amount = 1

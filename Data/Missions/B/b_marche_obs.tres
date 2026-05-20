@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="MissionData" format=3 uid="uid://b09mobs"]
+
+[ext_resource type="Script" uid="uid://7q6sivsis1nj" path="res://Scripts/Resources/MissionData.gd" id="1_b09mb"]
+
+[resource]
+script = ExtResource("1_b09mb")
+id = "b_marche_obs"
+title = "Perception Totale"
+description = "Faire une marche sans téléphone en observant uniquement l'environnement."
+rank = 4
+req_per = 25
+base_xp = 2600
+reward_stat = 7
+reward_stat_amount = 2

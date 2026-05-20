@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="ItemData" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://Scripts/Resources/ItemData.gd" id="1_itemdata"]
+[ext_resource type="Texture2D" path="res://Assets/Avatar/Equipment/Icons/hache_en_fer_icon.png" id="2_icon"]
+
+[resource]
+script = ExtResource("1_itemdata")
+id = "hache_en_fer"
+item_name = "Hache en fer"
+description = "Une hache lourde et robuste, faite pour frapper fort."
+item_type = 0
+icon = ExtResource("2_icon")
+base_power = 4
+stat_pool = PackedStringArray("STR", "HP")

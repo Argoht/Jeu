@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="MissionData" format=3 uid="uid://dax2ctvq77qds"]
+
+[ext_resource type="Script" uid="uid://7q6sivsis1nj" path="res://Scripts/Resources/MissionData.gd" id="1_ll4kx"]
+
+[resource]
+script = ExtResource("1_ll4kx")
+id = "b_mental"
+title = "Mental"
+description = "Douche froide intégrale."
+rank = 4
+req_wil = 25
+base_xp = 2200

@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="MissionData" format=3 uid="uid://c06burp"]
+
+[ext_resource type="Script" uid="uid://7q6sivsis1nj" path="res://Scripts/Resources/MissionData.gd" id="1_c06bp"]
+
+[resource]
+script = ExtResource("1_c06bp")
+id = "c_burpees"
+title = "Force Explosive"
+description = "Faire 20 burpees puis courir 500 mètres."
+rank = 3
+req_str = 18
+base_xp = 1500
+reward_stat = 1
+reward_stat_amount = 1

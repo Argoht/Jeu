@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="MissionData" format=3 uid="uid://d3wga15tpqu22"]
+
+[ext_resource type="Script" uid="uid://7q6sivsis1nj" path="res://Scripts/Resources/MissionData.gd" id="1_236k0"]
+
+[resource]
+script = ExtResource("1_236k0")
+id = "s_focus"
+title = "Focus"
+description = "3 sessions de cohérence cardiaque."
+rank = 6
+req_wis = 60
+base_xp = 5000

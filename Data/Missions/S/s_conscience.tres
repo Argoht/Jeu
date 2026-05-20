@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="MissionData" format=3 uid="uid://s12cons"]
+
+[ext_resource type="Script" uid="uid://7q6sivsis1nj" path="res://Scripts/Resources/MissionData.gd" id="1_s12cn"]
+
+[resource]
+script = ExtResource("1_s12cn")
+id = "s_conscience"
+title = "Instinct Ultime"
+description = "Passer une journée complète en pleine conscience de ton environnement."
+rank = 6
+req_per = 60
+base_xp = 9000
+reward_stat = 7
+reward_stat_amount = 3

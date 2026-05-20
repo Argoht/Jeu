@@ -1,0 +1,8 @@
+﻿.godot/
+.import/
+build/
+tmp_avatar_crops/
+tmp_video_frames/
+tmp_video_frames2/
+export_presets.cfg
+*.tmp

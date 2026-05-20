@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="MissionData" format=3 uid="uid://cmyug6thrlrgp"]
+
+[ext_resource type="Script" uid="uid://7q6sivsis1nj" path="res://Scripts/Resources/MissionData.gd" id="1_5hipj"]
+
+[resource]
+script = ExtResource("1_5hipj")
+id = "a_hebdo_maitrise"
+title = "Maîtrise Corporelle"
+description = "Tenir une posture d'équilibre complexe (ex: handstand)."
+rank = 5
+type = 1
+req_dex = 50
+base_xp = 10000
+reward_stat = 2
+reward_stat_amount = 3

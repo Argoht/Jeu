@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="MissionData" format=3 uid="uid://cnw08vol"]
+
+[ext_resource type="Script" uid="uid://7q6sivsis1nj" path="res://Scripts/Resources/MissionData.gd" id="1_cnw08"]
+
+[resource]
+script = ExtResource("1_cnw08")
+id = "c_hebdo_volonte"
+title = "Volonté de Fer"
+description = "Tenir une routine stricte pendant 7 jours sans déviation."
+rank = 3
+type = 1
+req_wil = 20
+base_xp = 3000
+reward_stat = 8
+reward_stat_amount = 3

@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="MissionData" format=3 uid="uid://bq4y24qr60b0b"]
+
+[ext_resource type="Script" uid="uid://7q6sivsis1nj" path="res://Scripts/Resources/MissionData.gd" id="1_5u4b7"]
+
+[resource]
+script = ExtResource("1_5u4b7")
+id = "c_hebdo_savoir"
+title = "Assimilation"
+description = "Terminer un livre complexe ou un cours en ligne."
+rank = 3
+type = 1
+req_int = 20
+base_xp = 2500
+reward_stat = 4
+reward_stat_amount = 2
