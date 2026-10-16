@@ -10,16 +10,19 @@ var _touch_start_position := Vector2.ZERO
 var _touch_scroll_start: int = 0
 var _touch_active_index: int = -1
 var _validation_widgets: Array = []
+var _reward_widgets: Array = []
 var _journal_expanded: bool = false
+var _needs_rebuild := true
+var _built_locale := ""
 
 const TOUCH_DRAG_DEADZONE := 8.0
-const MOBILE_TOUCH_TARGET := 68.0
+const MOBILE_TOUCH_TARGET := 96.0
 const MOBILE_TIMER_HEIGHT := 38.0
-const MOBILE_TIMER_FONT_SIZE := 15
-const MOBILE_SECTION_FONT_SIZE := 18
-const MOBILE_SMALL_FONT_SIZE := 14
-const MOBILE_BODY_FONT_SIZE := 16
-const MOBILE_TITLE_FONT_SIZE := 20
+const MOBILE_TIMER_FONT_SIZE := 22
+const MOBILE_SECTION_FONT_SIZE := 28
+const MOBILE_SMALL_FONT_SIZE := 24
+const MOBILE_BODY_FONT_SIZE := 28
+const MOBILE_TITLE_FONT_SIZE := 32
 const JOURNAL_RECENT_LIMIT := 50
 const JOURNAL_MAX_HEIGHT := 280.0
 const JOURNAL_BUTTON_WIDTH := 118.0
@@ -61,16 +64,61 @@ func _ready() -> void:
 
 	if GlobalEngine.has_method("ensure_missions_available"):
 		GlobalEngine.ensure_missions_available()
-	if not GlobalEngine.missions_changed.is_connected(_build_static_ui):
-		GlobalEngine.missions_changed.connect(_build_static_ui)
+	if not GlobalEngine.missions_changed.is_connected(_on_missions_changed):
+		GlobalEngine.missions_changed.connect(_on_missions_changed)
 	_build_static_ui()
+
+func _input(event: InputEvent) -> void:
+	# MainScene routes drags to the scroll container under the initial touch.
+	if get_parent().has_method("_get_active_scroll_container_at"):
+		return
+	if not is_visible_in_tree() or not is_instance_valid(_daily_scroll):
+		return
+
+	if event is InputEventScreenTouch:
+		var touch_event := event as InputEventScreenTouch
+		if touch_event.pressed:
+			if not _daily_scroll.get_global_rect().has_point(touch_event.position):
+				return
+			_touch_dragging = true
+			_touch_active_index = touch_event.index
+			_touch_start_position = touch_event.position
+			_touch_scroll_start = _daily_scroll.scroll_vertical
+		elif touch_event.index == _touch_active_index:
+			_touch_dragging = false
+			_touch_active_index = -1
+		return
+
+	if event is InputEventScreenDrag:
+		var drag_event := event as InputEventScreenDrag
+		if not _touch_dragging or drag_event.index != _touch_active_index:
+			return
+
+		var delta_y := drag_event.position.y - _touch_start_position.y
+		if absf(delta_y) < TOUCH_DRAG_DEADZONE:
+			return
+
+		_daily_scroll.scroll_vertical = maxi(0, _touch_scroll_start - int(delta_y))
+		get_viewport().set_input_as_handled()
 
 func refresh() -> void:
 	if GlobalEngine.has_method("ensure_missions_available"):
 		GlobalEngine.ensure_missions_available()
-	_build_static_ui()
+	if _built_locale != GlobalEngine.get_language():
+		_needs_rebuild = true
+	if _needs_rebuild and is_visible_in_tree():
+		_build_static_ui()
+	else:
+		_refresh_validation_widgets()
+
+func _on_missions_changed() -> void:
+	_needs_rebuild = true
+	if is_visible_in_tree():
+		_build_static_ui()
 
 func _build_static_ui() -> void:
+	_needs_rebuild = false
+	_built_locale = GlobalEngine.get_language()
 	_build_static_ui_compact()
 	return
 	_clear_children(_main_vbox)
@@ -138,32 +186,35 @@ func _build_static_ui() -> void:
 
 func _build_static_ui_compact() -> void:
 	_clear_children(_main_vbox)
+	_main_vbox.add_child(preload("res://Scripts/UI/DailyJourneyView.gd").new())
 	_main_vbox.add_child(_create_header_panel())
-
-	if _journal_expanded:
-		_main_vbox.add_child(_create_journal_panel())
-
-	_add_section_header(GlobalEngine.loc("mission.daily_section"), Color("#00f2ff"), _main_vbox)
 
 	_daily_scroll = ScrollContainer.new()
 	_daily_scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_daily_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_daily_scroll.mouse_filter = Control.MOUSE_FILTER_STOP
 	_daily_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	_daily_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
-	_daily_scroll.gui_input.connect(_on_daily_scroll_gui_input)
 	_main_vbox.add_child(_daily_scroll)
+	var scroll_content := VBoxContainer.new()
+	scroll_content.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll_content.add_theme_constant_override("separation", 16)
+	_daily_scroll.add_child(scroll_content)
+	if _journal_expanded:
+		scroll_content.add_child(_create_journal_panel())
+	_add_section_header(GlobalEngine.loc("mission.daily_section"), Color("#00f2ff"), scroll_content)
 
 	_daily_list_vbox = VBoxContainer.new()
 	_daily_list_vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_daily_list_vbox.add_theme_constant_override("separation", 16)
-	_daily_scroll.add_child(_daily_list_vbox)
+	scroll_content.add_child(_daily_list_vbox)
 
-	_add_section_header(GlobalEngine.loc("mission.weekly_section"), Color("#d15cff"), _main_vbox)
+	_add_section_header(GlobalEngine.loc("mission.weekly_section"), Color("#d15cff"), scroll_content)
 
 	_weekly_vbox = VBoxContainer.new()
 	_weekly_vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_weekly_vbox.add_theme_constant_override("separation", 14)
-	_main_vbox.add_child(_weekly_vbox)
+	scroll_content.add_child(_weekly_vbox)
 
 	_refresh_mission_cards()
 
@@ -204,7 +255,6 @@ func _create_header_panel() -> PanelContainer:
 	var summary_row := HBoxContainer.new()
 	summary_row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	summary_row.add_theme_constant_override("separation", 8)
-	box.add_child(summary_row)
 
 	var history := Label.new()
 	history.name = "HistorySummary"
@@ -212,34 +262,35 @@ func _create_header_panel() -> PanelContainer:
 	history.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	history.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
 	history.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	history.autowrap_mode = TextServer.AUTOWRAP_OFF
-	history.clip_text = true
+	history.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	history.add_theme_font_size_override("font_size", MOBILE_SMALL_FONT_SIZE)
 	history.add_theme_color_override("font_color", Color("#ffd166"))
-	summary_row.add_child(history)
+	box.add_child(history)
+	box.add_child(summary_row)
 
 	var reward_cap := Label.new()
 	reward_cap.name = "RewardCapSummary"
 	reward_cap.text = _reward_cap_text()
-	reward_cap.custom_minimum_size = Vector2(176, 40)
+	reward_cap.custom_minimum_size = Vector2(0, 88)
+	reward_cap.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	reward_cap.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	reward_cap.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	reward_cap.autowrap_mode = TextServer.AUTOWRAP_OFF
-	reward_cap.clip_text = true
-	reward_cap.add_theme_font_size_override("font_size", 12)
+	reward_cap.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	reward_cap.add_theme_font_size_override("font_size", 24)
 	reward_cap.add_theme_color_override("font_color", Color("#8be9fd"))
 	summary_row.add_child(reward_cap)
 
 	var journal_button := Button.new()
 	journal_button.name = "JournalToggle"
 	journal_button.text = GlobalEngine.loc("mission.journal")
-	journal_button.custom_minimum_size = Vector2(82, 40)
-	journal_button.size_flags_horizontal = Control.SIZE_SHRINK_END
+	journal_button.custom_minimum_size = Vector2(190, 96)
+	journal_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	journal_button.add_theme_font_size_override("font_size", MOBILE_SMALL_FONT_SIZE)
 	journal_button.add_theme_color_override("font_color", Color("#8be9fd"))
 	journal_button.add_theme_stylebox_override("normal", _journal_toggle_style())
 	journal_button.add_theme_stylebox_override("pressed", _journal_toggle_style(Color(0.03, 0.09, 0.13, 1)))
 	journal_button.pressed.connect(func():
+		GlobalEngine.play_ui_select()
 		_journal_expanded = not _journal_expanded
 		_build_static_ui()
 	)
@@ -264,6 +315,7 @@ func _refresh_mission_cards() -> void:
 		GlobalEngine.ensure_missions_available()
 
 	_validation_widgets.clear()
+	_reward_widgets.clear()
 	_clear_children(_daily_list_vbox)
 	_clear_children(_weekly_vbox)
 
@@ -275,7 +327,7 @@ func _refresh_mission_cards() -> void:
 		empty.add_theme_color_override("font_color", Color("#707070"))
 		_daily_list_vbox.add_child(empty)
 	else:
-		for mission in GlobalEngine.available_missions:
+		for mission in _missions_for_display(GlobalEngine.available_missions):
 			_daily_list_vbox.add_child(_create_card(mission, false))
 
 	if GlobalEngine.available_weekly_missions.is_empty():
@@ -286,8 +338,20 @@ func _refresh_mission_cards() -> void:
 		empty_weekly.add_theme_color_override("font_color", Color("#707070"))
 		_weekly_vbox.add_child(empty_weekly)
 	else:
-		for mission in GlobalEngine.available_weekly_missions:
+		for mission in _missions_for_display(GlobalEngine.available_weekly_missions):
 			_weekly_vbox.add_child(_create_card(mission, true))
+
+func _missions_for_display(missions: Array) -> Array:
+	var active: Array = []
+	var available: Array = []
+	var finished: Array = []
+	for mission in missions:
+		match String(mission.get("status", "available")):
+			"in_progress": active.append(mission)
+			"available": available.append(mission)
+			_: finished.append(mission)
+	# Keep live dictionary references: mission actions validate their identity.
+	return active + available + finished
 
 func _on_daily_scroll_gui_input(event: InputEvent) -> void:
 	if not is_instance_valid(_daily_scroll):
@@ -376,10 +440,10 @@ func _create_card(m_dict: Dictionary, is_weekly: bool) -> PanelContainer:
 	style.border_width_top = 2
 	style.border_width_right = 2
 	style.border_width_bottom = 2
-	style.corner_radius_top_left = 10
-	style.corner_radius_top_right = 10
-	style.corner_radius_bottom_left = 10
-	style.corner_radius_bottom_right = 10
+	style.corner_radius_top_left = 8
+	style.corner_radius_top_right = 8
+	style.corner_radius_bottom_left = 8
+	style.corner_radius_bottom_right = 8
 
 	var mission_status := String(m_dict.get("status", "available"))
 	var end_cost := int(m_dict.get("end_cost", 15))
@@ -424,17 +488,14 @@ func _create_card(m_dict: Dictionary, is_weekly: bool) -> PanelContainer:
 	desc.add_theme_color_override("font_color", Color(0.74, 0.74, 0.74))
 	content.add_child(desc)
 
-	var reward_text := "+" + str(m_data.get_base_xp_reward()) + " XP"
-	var reward_stat_key: String = m_data.get_reward_stat_key()
-	if not reward_stat_key.is_empty():
-		reward_text += "  +" + str(m_data.reward_stat_amount) + " " + reward_stat_key
-
 	var reward := Label.new()
-	reward.text = reward_text
+	reward.text = _mission_reward_text(m_dict, m_data)
+	reward.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	reward.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	reward.add_theme_font_size_override("font_size", MOBILE_BODY_FONT_SIZE)
 	reward.add_theme_color_override("font_color", Color("#00ff88"))
 	content.add_child(reward)
+	_reward_widgets.append({"label": reward, "mission": m_dict, "data": m_data})
 
 	var validation_preview := _validation_preview_text(m_data)
 	if not validation_preview.is_empty() and mission_status == "available":
@@ -445,15 +506,6 @@ func _create_card(m_dict: Dictionary, is_weekly: bool) -> PanelContainer:
 		validation_label.add_theme_font_size_override("font_size", MOBILE_BODY_FONT_SIZE)
 		validation_label.add_theme_color_override("font_color", Color("#8be9fd"))
 		content.add_child(validation_label)
-
-	if mission_status == "available" and _daily_rewards_exhausted_for(m_data):
-		var journal_only := Label.new()
-		journal_only.text = GlobalEngine.loc("mission.journal_only_cap")
-		journal_only.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		journal_only.autowrap_mode = TextServer.AUTOWRAP_WORD
-		journal_only.add_theme_font_size_override("font_size", MOBILE_SMALL_FONT_SIZE)
-		journal_only.add_theme_color_override("font_color", Color("#ffb347"))
-		content.add_child(journal_only)
 
 	var buttons := VBoxContainer.new()
 	buttons.add_theme_constant_override("separation", 8)
@@ -483,7 +535,12 @@ func _create_card(m_dict: Dictionary, is_weekly: bool) -> PanelContainer:
 				accept_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 				accept_button.custom_minimum_size = Vector2(0, MOBILE_TOUCH_TARGET)
 				accept_button.add_theme_font_size_override("font_size", MOBILE_BODY_FONT_SIZE)
-				accept_button.pressed.connect(func(): if GlobalEngine.accept_mission(m_dict): _refresh_mission_cards())
+				accept_button.button_down.connect(func(): GlobalEngine.play_ui_select(-13.0))
+				accept_button.pressed.connect(func():
+					if GlobalEngine.accept_mission(m_dict):
+						_play_button_pop(accept_button, Color("#ffd166"), "START")
+						_refresh_mission_cards()
+				)
 				buttons.add_child(accept_button)
 		"in_progress":
 			_build_in_progress_controls(buttons, m_dict)
@@ -519,8 +576,10 @@ func _build_in_progress_controls(parent: VBoxContainer, m_dict: Dictionary) -> v
 		var step := maxi(1, int(state.get("amount_step", 1)))
 		var minus_button := _make_validation_button("-%d" % step, Color("#ff6262"))
 		minus_button.custom_minimum_size = Vector2(72, MOBILE_TOUCH_TARGET)
+		minus_button.button_down.connect(func(): GlobalEngine.play_ui_select(-15.0))
 		minus_button.pressed.connect(func():
 			if GlobalEngine.update_mission_progress(m_dict, -step):
+				_play_button_pop(minus_button, Color("#ff6262"), "-")
 				_refresh_validation_widgets()
 		)
 		progress_row.add_child(minus_button)
@@ -535,8 +594,10 @@ func _build_in_progress_controls(parent: VBoxContainer, m_dict: Dictionary) -> v
 
 		var plus_button := _make_validation_button("+%d" % step, Color("#00ff88"))
 		plus_button.custom_minimum_size = Vector2(72, MOBILE_TOUCH_TARGET)
+		plus_button.button_down.connect(func(): GlobalEngine.play_ui_select(-15.0))
 		plus_button.pressed.connect(func():
 			if GlobalEngine.update_mission_progress(m_dict, step):
+				_play_button_pop(plus_button, Color("#00ff88"), "+")
 				_refresh_validation_widgets()
 		)
 		progress_row.add_child(plus_button)
@@ -550,7 +611,8 @@ func _build_in_progress_controls(parent: VBoxContainer, m_dict: Dictionary) -> v
 		proof_edit.max_length = 120
 		proof_edit.add_theme_font_size_override("font_size", MOBILE_BODY_FONT_SIZE)
 		proof_edit.text_changed.connect(func(new_text: String):
-			m_dict["proof_text"] = new_text
+			if GlobalEngine.update_mission_proof(m_dict, new_text, false):
+				_refresh_validation_widgets()
 		)
 		proof_edit.text_submitted.connect(func(new_text: String):
 			GlobalEngine.update_mission_proof(m_dict, new_text)
@@ -571,16 +633,46 @@ func _build_in_progress_controls(parent: VBoxContainer, m_dict: Dictionary) -> v
 	var action_row := HBoxContainer.new()
 	action_row.add_theme_constant_override("separation", 8)
 	parent.add_child(action_row)
-
-	var fail_button := _make_validation_button(GlobalEngine.loc("mission.abandon"), Color("#ff6262"))
-	fail_button.pressed.connect(func():
+	var abandon_box := VBoxContainer.new()
+	abandon_box.hide()
+	parent.add_child(abandon_box)
+	var abandon_warning := Label.new()
+	var mission_data = GlobalEngine.all_missions.get(String(m_dict.get("id", "")))
+	var penalty: int = mission_data.get_failure_penalty_hp() if mission_data != null else 0
+	abandon_warning.text = GlobalEngine.loc("mission.abandon_warning", [penalty])
+	abandon_warning.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	abandon_warning.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	abandon_warning.add_theme_font_size_override("font_size", MOBILE_BODY_FONT_SIZE)
+	abandon_warning.add_theme_color_override("font_color", Color("#ffb347"))
+	abandon_box.add_child(abandon_warning)
+	var abandon_actions := HBoxContainer.new()
+	abandon_actions.add_theme_constant_override("separation", 8)
+	abandon_box.add_child(abandon_actions)
+	var keep_button := _make_validation_button(GlobalEngine.loc("mission.keep"), Color("#00ff88"))
+	keep_button.pressed.connect(func():
+		abandon_box.hide()
+		action_row.show()
+	)
+	abandon_actions.add_child(keep_button)
+	var confirm_button := _make_validation_button(GlobalEngine.loc("mission.confirm_abandon"), Color("#ff6262"))
+	confirm_button.pressed.connect(func():
 		if GlobalEngine.process_mission_result(m_dict, false):
 			_refresh_mission_cards()
+	)
+	abandon_actions.add_child(confirm_button)
+
+	var fail_button := _make_validation_button(GlobalEngine.loc("mission.abandon"), Color("#ff6262"))
+	fail_button.button_down.connect(func(): GlobalEngine.play_ui_select(-14.0))
+	fail_button.pressed.connect(func():
+		action_row.hide()
+		abandon_box.show()
 	)
 	action_row.add_child(fail_button)
 
 	var validate_button := _make_validation_button(GlobalEngine.loc("mission.validate"), Color("#00ff88"))
+	validate_button.button_down.connect(func(): GlobalEngine.play_ui_select(-10.0))
 	validate_button.pressed.connect(func():
+		_play_button_pop(validate_button, Color("#00ff88"), "OK")
 		if GlobalEngine.process_mission_result(m_dict, true):
 			_refresh_mission_cards()
 	)
@@ -592,6 +684,10 @@ func _build_in_progress_controls(parent: VBoxContainer, m_dict: Dictionary) -> v
 		"progress_label": progress_label,
 		"blockers_label": blockers_label,
 		"validate_button": validate_button,
+		"abandon_button": fail_button,
+		"abandon_box": abandon_box,
+		"keep_button": keep_button,
+		"confirm_abandon_button": confirm_button,
 	}
 	_validation_widgets.append(widget)
 	_sync_validation_widget(widget)
@@ -605,10 +701,86 @@ func _make_validation_button(text: String, color: Color) -> Button:
 	button.add_theme_color_override("font_color", color)
 	return button
 
+func _play_button_pop(button: Control, color: Color, text: String = "") -> void:
+	if not is_instance_valid(button):
+		return
+	button.pivot_offset = button.size * 0.5
+	button.scale = Vector2(0.96, 0.96)
+	var tween := create_tween()
+	tween.tween_property(button, "scale", Vector2.ONE, 0.16).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	_spawn_button_particles(button, color, 12)
+	if not text.is_empty():
+		_spawn_button_text(button, color, text)
+
+func _spawn_button_particles(parent: Control, color: Color, count: int) -> void:
+	for i in range(count):
+		var spark := ColorRect.new()
+		spark.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		spark.color = Color(color.r, color.g, color.b, randf_range(0.55, 0.95))
+		parent.add_child(spark)
+		var size_px := randf_range(3.0, 6.0)
+		spark.size = Vector2(size_px, size_px)
+		spark.position = parent.size * 0.5
+		var angle := randf() * TAU
+		var distance := randf_range(24.0, 52.0)
+		var target := spark.position + Vector2(cos(angle), sin(angle)) * distance
+		var tween := create_tween()
+		tween.set_parallel(true)
+		tween.tween_property(spark, "position", target, 0.34).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+		tween.tween_property(spark, "modulate:a", 0.0, 0.34).set_delay(0.06)
+		tween.chain().tween_callback(_queue_free_fx.bind(spark))
+
+func _spawn_button_text(parent: Control, color: Color, text: String) -> void:
+	var label := Label.new()
+	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	label.text = text
+	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	label.add_theme_font_size_override("font_size", 18)
+	label.add_theme_color_override("font_color", color)
+	label.add_theme_color_override("font_outline_color", Color(0.0, 0.0, 0.0, 0.95))
+	label.add_theme_constant_override("outline_size", 2)
+	label.size = Vector2(70, 28)
+	label.position = parent.size * 0.5 + Vector2(-35, -34)
+	parent.add_child(label)
+	var tween := create_tween()
+	tween.set_parallel(true)
+	tween.tween_property(label, "position", label.position + Vector2(0, -28), 0.44).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	tween.tween_property(label, "modulate:a", 0.0, 0.44).set_delay(0.08)
+	tween.chain().tween_callback(_queue_free_fx.bind(label))
+
+func _queue_free_fx(node) -> void:
+	if is_instance_valid(node):
+		node.queue_free()
+
 func _refresh_validation_widgets() -> void:
+	for widget in _reward_widgets:
+		if is_instance_valid(widget["label"]):
+			widget["label"].text = _mission_reward_text(widget["mission"], widget["data"])
 	for widget in _validation_widgets:
 		if widget is Dictionary:
 			_sync_validation_widget(widget)
+
+func _mission_reward_text(mission: Dictionary, data) -> String:
+	var status := String(mission.get("status", "available"))
+	if status == "failed":
+		return GlobalEngine.loc("mission.no_reward")
+	if status == "completed":
+		if not bool(mission.get("rewarded", true)):
+			return GlobalEngine.loc("popup.journal_only")
+	elif _daily_rewards_exhausted_for(data):
+		return GlobalEngine.loc("mission.journal_only_cap")
+	var text := "+%d XP" % data.get_base_xp_reward()
+	var stat: String = data.get_reward_stat_key()
+	if not stat.is_empty():
+		text += "  +%d %s" % [data.reward_stat_amount, stat]
+	if status in ["available", "in_progress"] and GlobalEngine.BASE_FEATURE_ENABLED and (data.get_base_xp_reward() > 0 or data.reward_stat_amount != 0):
+		var gains: Dictionary = GlobalEngine.base_manager.preview_mission_materials(stat, GlobalEngine.get_rank_index(GlobalEngine.lvl))
+		var materials: Array[String] = []
+		for key in gains:
+			materials.append("+%d %s" % [int(gains[key]), GlobalEngine.loc("base.material.short.%s" % key)])
+		text += "\n" + " / ".join(materials)
+	return text
 
 func _sync_validation_widget(widget: Dictionary) -> void:
 	var mission: Dictionary = widget.get("mission", {})
@@ -685,9 +857,12 @@ func _localized_amount_label(label: String) -> String:
 
 func _format_duration_ui(seconds: int) -> String:
 	var safe_seconds := maxi(0, seconds)
+	var days := int(float(safe_seconds) / 86400.0)
 	var hours := int(float(safe_seconds) / 3600.0)
 	var minutes := int(float(safe_seconds % 3600) / 60.0)
 	var secs := safe_seconds % 60
+	if days > 0:
+		return "%dj %02d:%02d:%02d" % [days, int(float(safe_seconds % 86400) / 3600.0), minutes, secs]
 	if hours > 0:
 		return "%d:%02d:%02d" % [hours, minutes, secs]
 	return "%02d:%02d" % [minutes, secs]

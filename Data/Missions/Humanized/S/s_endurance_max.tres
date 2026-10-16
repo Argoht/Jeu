@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="MissionData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://Scripts/Resources/MissionData.gd" id="1_mission"]
+
+[resource]
+script = ExtResource("1_mission")
+id = "s_endurance_max"
+title = "Endurance MAX"
+description = "Courir 20 km."
+rank = 6
+type = 1
+req_end = 87
+base_xp = 26000
+reward_stat = 3
+reward_stat_amount = 4
+proof_required = true

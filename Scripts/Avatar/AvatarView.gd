@@ -1,200 +1,145 @@
 extends Control
 
-const AVATAR_SPRITESHEET_PATH := "res://Assets/Avatar/Body/character_spritesheet.png"
-const DEFAULT_BACKGROUND_PATH := "res://Assets/Avatar/Backgrounds/forest_default.png"
-const AVATAR_FRAME_SIZE := Vector2(64, 64)
-const AVATAR_DIRECTION_FRAMES := [
-	Vector2(0, 2),
-	Vector2(0, 0),
-]
-const EQUIPMENT_DRAW_ORDER := ["legs", "feet", "armor", "weapon"]
-const EQUIPMENT_VISUAL_PATHS := {
-	"armor": {
-		"chemise_delavee": "res://Assets/Avatar/Equipment/Default/Torso/chemise_delavee.png",
-	},
-	"legs": {
-		"short_de_timp": "res://Assets/Avatar/Equipment/Default/Legs/default_bottom.png",
-	},
-	"feet": {
-		"claquettes_de_boloss": "res://Assets/Avatar/Equipment/Default/Feet/default_shoes.png",
-	},
-}
-const ARROW_SIZE := Vector2(44, 44)
-var _level: int = 1
-var _rank: String = "F"
-var _equipment: Dictionary = {}
-var _direction_index: int = 0
-var _background_texture: Texture2D = null
-var _avatar_spritesheet: Texture2D = null
-var _equipment_texture_cache: Dictionary = {}
-var _left_arrow_rect := Rect2()
-var _right_arrow_rect := Rect2()
+const HUNTER_ATLASES = [
+	preload("res://Assets/Avatar/Hunter/hunter_idle_0.png"),
+	preload("res://Assets/Avatar/Hunter/hunter_idle_1.png"),
+	preload("res://Assets/Avatar/Hunter/hunter_idle_2.png"),
+	preload("res://Assets/Avatar/Hunter/hunter_idle_3.png"),
+	preload("res://Assets/Avatar/Hunter/hunter_idle_4.png"),
+	preload("res://Assets/Avatar/Hunter/hunter_idle_5.png"),
+	preload("res://Assets/Avatar/Hunter/hunter_idle_6.png"),
+	preload("res://Assets/Avatar/Hunter/hunter_idle_7.png"),
+	preload("res://Assets/Avatar/Hunter/hunter_idle_8.png")]
+const HUNTER_FRAME_SIZE := Vector2(256, 384)
+const HUNTER_CELL_SIZE := Vector2(260, 388)
+const HUNTER_FRAME_COUNT := 300
+const HUNTER_FPS := 60.0
+const HUNTER_LOOP_SECONDS := 2.0 * (HUNTER_FRAME_COUNT - 1) / HUNTER_FPS
+var _hunter_elapsed := 0.0
+var _hunter_frame := 0
+var _hunter_material: ShaderMaterial
+
+var _background_video: VideoStreamPlayer
+var _ground_shadow: ColorRect
+var _scroll_viewport: ScrollContainer
+var _application_suspended := false
 
 func _ready() -> void:
-	custom_minimum_size = Vector2(180, 250)
-	mouse_filter = Control.MOUSE_FILTER_STOP
-	texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	custom_minimum_size = Vector2(180, 560)
+	get_parent().custom_minimum_size.y = 560
+	mouse_filter = Control.MOUSE_FILTER_IGNORE
+	texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+	clip_contents = true
+	_hunter_material = ShaderMaterial.new()
+	_hunter_material.shader = preload("res://Scripts/Avatar/hunter_interpolation.gdshader")
+	material = _hunter_material
+	_update_hunter_blend()
 	_load_background()
-	_load_avatar_spritesheet()
+	_load_ground_shadow()
+	var ancestor := get_parent()
+	while ancestor != null:
+		if ancestor is ScrollContainer:
+			_scroll_viewport = ancestor
+			_scroll_viewport.get_v_scroll_bar().value_changed.connect(func(_value): _sync_animation_visibility())
+			break
+		ancestor = ancestor.get_parent()
+	visibility_changed.connect(_sync_animation_visibility)
+	resized.connect(_layout_background)
+	_sync_animation_visibility()
 
-func set_avatar_state(level: int, rank: String, _equipment: Dictionary) -> void:
-	_level = level
-	_rank = rank
-	self._equipment = _equipment
+func _sync_animation_visibility() -> void:
+	var active := is_visible_in_tree() and not _application_suspended
+	if active and is_instance_valid(_scroll_viewport):
+		active = get_global_rect().intersects(_scroll_viewport.get_global_rect())
+	set_process(active)
+	if is_instance_valid(_background_video):
+		_background_video.paused = not active
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_APPLICATION_PAUSED:
+		_application_suspended = true
+		_sync_animation_visibility()
+	elif what == NOTIFICATION_APPLICATION_RESUMED:
+		_application_suspended = false
+		_sync_animation_visibility()
+
+func _frame_at_time(seconds: float) -> int:
+	return int(floor(_pose_at_time(seconds) + 0.00001))
+
+func _pose_at_time(seconds: float) -> float:
+	var step := fposmod(seconds, HUNTER_LOOP_SECONDS) * HUNTER_FPS
+	return minf(step, 2.0 * (HUNTER_FRAME_COUNT - 1) - step)
+
+func _region_for_frame(frame: int) -> Vector4:
+	var cell := frame % 35
+	var origin := Vector2(cell % 7, cell / 7) * HUNTER_CELL_SIZE + Vector2(2, 2)
+	var atlas_size: Vector2 = HUNTER_ATLASES[frame / 35].get_size()
+	return Vector4(origin.x / atlas_size.x, origin.y / atlas_size.y, HUNTER_FRAME_SIZE.x / atlas_size.x, HUNTER_FRAME_SIZE.y / atlas_size.y)
+
+func _update_hunter_blend() -> void:
+	var pose := _pose_at_time(_hunter_elapsed)
+	var next_frame := mini(_hunter_frame + 1, HUNTER_FRAME_COUNT - 1)
+	_hunter_material.set_shader_parameter("current_region", _region_for_frame(_hunter_frame))
+	_hunter_material.set_shader_parameter("next_region", _region_for_frame(next_frame))
+	_hunter_material.set_shader_parameter("next_atlas", HUNTER_ATLASES[next_frame / 35])
+	_hunter_material.set_shader_parameter("frame_mix", clampf(pose - _hunter_frame, 0.0, 1.0))
+
+func _process(delta: float) -> void:
+	_hunter_elapsed = fposmod(_hunter_elapsed + delta, HUNTER_LOOP_SECONDS)
+	var next_frame := _frame_at_time(_hunter_elapsed)
+	if next_frame != _hunter_frame:
+		_hunter_frame = next_frame
+		queue_redraw()
+	_update_hunter_blend()
+
+func _hunter_rect() -> Rect2:
+	var available := Vector2(maxf(size.x - 16.0, 1.0), maxf(size.y - 80.0, 1.0))
+	var factor := minf(available.x / HUNTER_FRAME_SIZE.x, available.y / HUNTER_FRAME_SIZE.y)
+	var drawn_size := HUNTER_FRAME_SIZE * factor
+	return Rect2(Vector2((size.x - drawn_size.x) * 0.5, 64.0 + (available.y - drawn_size.y) * 0.5), drawn_size)
+
+func set_avatar_state(_level: int, _rank: String, _equipment: Dictionary) -> void:
+	# This baked appearance is independent of gameplay equipment and stats.
 	queue_redraw()
 
 func _draw() -> void:
-	var w := size.x
-	var h := size.y
-	var center := Vector2(w * 0.5, h * 0.61)
-	var scale := minf(w / 210.0, h / 270.0)
-	var avatar_rect := _get_avatar_rect(center, scale)
-	var source_rect := _get_source_rect()
+	var cell := _hunter_frame % 35
+	var origin := Vector2(cell % 7, cell / 7) * HUNTER_CELL_SIZE + Vector2(2, 2)
+	draw_texture_rect_region(HUNTER_ATLASES[_hunter_frame / 35], _hunter_rect(), Rect2(origin, HUNTER_FRAME_SIZE))
 
-	_draw_background()
-	_draw_base_avatar(avatar_rect, source_rect)
-	_draw_equipment_layers(avatar_rect, source_rect)
-	_draw_rotation_arrows(center, scale)
-
-func _gui_input(event: InputEvent) -> void:
-	if event is InputEventScreenTouch and event.pressed:
-		_handle_rotation_input(event.position)
-		accept_event()
-
-	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
-		_handle_rotation_input(event.position)
-		accept_event()
-
-func _handle_rotation_input(position: Vector2) -> void:
-	if _left_arrow_rect.has_point(position):
-		_rotate_avatar(-1)
-	elif _right_arrow_rect.has_point(position):
-		_rotate_avatar(1)
-
-func _draw_base_avatar(rect: Rect2, source_rect: Rect2) -> void:
-	if _avatar_spritesheet == null:
+func _layout_background() -> void:
+	if not is_instance_valid(_background_video):
 		return
+	var source_size := Vector2(432, 768)
+	var factor := maxf(size.x / source_size.x, size.y / source_size.y)
+	_background_video.size = source_size * factor
+	_background_video.position = (size - _background_video.size) * 0.5
+	if is_instance_valid(_ground_shadow):
+		var hunter_rect := _hunter_rect()
+		_ground_shadow.position = hunter_rect.position
+		_ground_shadow.size = hunter_rect.size
+	_sync_animation_visibility()
 
-	draw_texture_rect_region(_avatar_spritesheet, rect, source_rect)
-
-func _draw_equipment_layers(rect: Rect2, source_rect: Rect2) -> void:
-	for slot in EQUIPMENT_DRAW_ORDER:
-		var item = _equipment.get(slot, null)
-		if typeof(item) != TYPE_DICTIONARY:
-			continue
-
-		var texture := _get_equipment_texture(slot, item)
-		if texture == null:
-			continue
-
-		draw_texture_rect_region(texture, rect, source_rect)
-
-func _get_equipment_texture(slot: String, item: Dictionary) -> Texture2D:
-	var template_id := String(item.get("template_id", ""))
-	if template_id.is_empty():
-		return null
-
-	var slot_paths: Dictionary = EQUIPMENT_VISUAL_PATHS.get(slot, {})
-	if slot_paths.is_empty():
-		return null
-
-	var path := String(slot_paths.get(template_id, ""))
-	if path.is_empty():
-		return null
-
-	if _equipment_texture_cache.has(path):
-		return _equipment_texture_cache[path]
-
-	var texture := _load_texture_from_path(path)
-	_equipment_texture_cache[path] = texture
-	return texture
-
-func _draw_background() -> void:
-	if _background_texture == null:
-		return
-
-	var texture_size := _background_texture.get_size()
-	if texture_size.x <= 0.0 or texture_size.y <= 0.0:
-		return
-
-	var target_rect := Rect2(Vector2.ZERO, size)
-	var target_ratio := size.x / size.y
-	var source_ratio := texture_size.x / texture_size.y
-	var source_size := texture_size
-	var source_pos := Vector2.ZERO
-
-	if source_ratio > target_ratio:
-		source_size.x = texture_size.y * target_ratio
-		source_pos.x = (texture_size.x - source_size.x) * 0.5
-	else:
-		source_size.y = texture_size.x / target_ratio
-		source_pos.y = (texture_size.y - source_size.y) * 0.5
-
-	draw_texture_rect_region(_background_texture, target_rect, Rect2(source_pos, source_size))
-
-func _get_avatar_rect(center: Vector2, scale: float) -> Rect2:
-	var target_size := Vector2(184, 184) * scale
-	return Rect2(
-		center + Vector2(-target_size.x * 0.5, -116.0 * scale),
-		target_size
-	)
-
-func _get_source_rect() -> Rect2:
-	var source_frame: Vector2 = AVATAR_DIRECTION_FRAMES[_direction_index]
-	return Rect2(source_frame * AVATAR_FRAME_SIZE, AVATAR_FRAME_SIZE)
-
-func _draw_rotation_arrows(center: Vector2, scale: float) -> void:
-	var button_size := ARROW_SIZE * scale
-	_left_arrow_rect = Rect2(center + Vector2(-116, -34) * scale, button_size)
-	_right_arrow_rect = Rect2(center + Vector2(72, -34) * scale, button_size)
-
-	_draw_arrow_button(_left_arrow_rect, true, scale)
-	_draw_arrow_button(_right_arrow_rect, false, scale)
-
-func _draw_arrow_button(rect: Rect2, points_left: bool, scale: float) -> void:
-	draw_rect(rect, Color(0.03, 0.07, 0.11, 0.86), true)
-	draw_rect(rect, Color(0.0, 0.67, 1.0, 0.95), false, 2.0 * scale)
-
-	var mid := rect.get_center()
-	var arrow_width := 12.0 * scale
-	var arrow_height := 17.0 * scale
-	var arrow := PackedVector2Array()
-	if points_left:
-		arrow = PackedVector2Array([
-			mid + Vector2(-arrow_width * 0.55, 0),
-			mid + Vector2(arrow_width * 0.45, -arrow_height * 0.5),
-			mid + Vector2(arrow_width * 0.45, arrow_height * 0.5),
-		])
-	else:
-		arrow = PackedVector2Array([
-			mid + Vector2(arrow_width * 0.55, 0),
-			mid + Vector2(-arrow_width * 0.45, -arrow_height * 0.5),
-			mid + Vector2(-arrow_width * 0.45, arrow_height * 0.5),
-		])
-	draw_colored_polygon(arrow, Color("#d8f4ff"))
-
-func _rotate_avatar(step: int) -> void:
-	_direction_index = posmod(_direction_index + step, AVATAR_DIRECTION_FRAMES.size())
-	queue_redraw()
-
-func _load_avatar_spritesheet() -> void:
-	_avatar_spritesheet = _load_texture_from_path(AVATAR_SPRITESHEET_PATH)
+func _load_ground_shadow() -> void:
+	_ground_shadow = ColorRect.new()
+	_ground_shadow.name = "HunterGroundShadow"
+	_ground_shadow.show_behind_parent = true
+	_ground_shadow.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var shadow_material := ShaderMaterial.new()
+	shadow_material.shader = preload("res://Scripts/Avatar/hunter_ground_shadow.gdshader")
+	_ground_shadow.material = shadow_material
+	add_child(_ground_shadow)
+	_layout_background()
 
 func _load_background() -> void:
-	_background_texture = _load_texture_from_path(DEFAULT_BACKGROUND_PATH)
-
-func _load_texture_from_path(path: String) -> Texture2D:
-	if path.is_empty():
-		return null
-
-	var loaded = load(path)
-	if loaded is Texture2D:
-		return loaded
-
-	var image := Image.new()
-	var error := image.load(path)
-	if error != OK:
-		push_warning("Texture avatar introuvable: %s" % path)
-		return null
-
-	return ImageTexture.create_from_image(image)
+	_background_video = VideoStreamPlayer.new()
+	_background_video.name = "AnimatedForest"
+	_background_video.expand = true
+	_background_video.loop = true
+	_background_video.show_behind_parent = true
+	_background_video.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_background_video.stream = preload("res://Assets/Avatar/Backgrounds/forest_animated_120.ogv")
+	_background_video.volume = 0.0
+	add_child(_background_video)
+	_layout_background()
+	_background_video.play()

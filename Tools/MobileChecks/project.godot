@@ -1,0 +1,19 @@
+config_version=5
+
+[application]
+config/name="IRL Leveling Validation"
+run/main_scene="res://checks.tscn"
+config/use_custom_user_dir=true
+config/custom_user_dir_name="IRLLevelingValidation"
+
+[autoload]
+GlobalEngine="*res://Scripts/GlobalEngine.gd"
+
+[display]
+window/size/viewport_width=720
+window/size/viewport_height=1280
+window/stretch/mode="canvas_items"
+window/stretch/aspect="expand"
+
+[rendering]
+renderer/rendering_method="gl_compatibility"

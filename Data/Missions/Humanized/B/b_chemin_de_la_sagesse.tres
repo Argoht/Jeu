@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="MissionData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://Scripts/Resources/MissionData.gd" id="1_mission"]
+
+[resource]
+script = ExtResource("1_mission")
+id = "b_chemin_de_la_sagesse"
+title = "Chemin de la sagesse"
+description = "Méditer 15 à 20 minutes par jour pendant 1 semaine."
+rank = 4
+type = 1
+req_wil = 41
+base_xp = 7000
+reward_stat = 8
+reward_stat_amount = 2
+proof_required = true

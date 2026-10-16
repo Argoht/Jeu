@@ -105,6 +105,8 @@ func _infer_validation_rules() -> Dictionary:
 
 	if duration <= 0:
 		duration = _default_min_duration_seconds()
+	if _weekly_text_needs_spread(text):
+		duration = maxi(duration, 3 * 86400)
 
 	if amount_target > 0 and duration > 0:
 		mode_key = MODE_TIMER_AMOUNT
@@ -123,6 +125,7 @@ func _make_validation_rules(mode_key: String, duration: int, amount_target: int,
 		needs_proof = true
 	if label.is_empty() and amount_target > 0:
 		label = "actions"
+	duration = _apply_weekly_spread_minimum(duration, amount_target, label)
 
 	return {
 		"mode": mode_key,
@@ -133,6 +136,27 @@ func _make_validation_rules(mode_key: String, duration: int, amount_target: int,
 		"proof_required": needs_proof,
 		"failure_penalty_hp": get_failure_penalty_hp(),
 	}
+
+func _apply_weekly_spread_minimum(duration: int, amount_target: int, label: String) -> int:
+	if int(type) != MissionType.HEBDOMADAIRE:
+		return duration
+	if amount_target < 5:
+		return duration
+	var normalized_label := label.to_lower()
+	if not ["sessions", "days", "actions"].has(normalized_label):
+		return duration
+	var min_days := 2
+	if amount_target >= 6:
+		min_days = 3
+	return maxi(duration, min_days * 86400)
+
+func _weekly_text_needs_spread(text: String) -> bool:
+	if int(type) != MissionType.HEBDOMADAIRE:
+		return false
+	for marker in ["semaine", "routine", "habitudes", "jours", "days"]:
+		if text.contains(marker):
+			return true
+	return false
 
 func _mode_key(mode: int) -> String:
 	match mode:
@@ -169,7 +193,9 @@ func _auto_requires_proof(text: String) -> bool:
 
 func _extract_duration_seconds(text: String) -> int:
 	var minutes := _regex_int(text, "(\\d+)\\s*(?:min|minute|minutes)")
-	var hours := _regex_int(text, "(\\d+)\\s*(?:h|heure|heures)")
+	var hours := 0
+	if not _looks_like_clock_time(text):
+		hours = _regex_int(text, "(\\d+)\\s*(?:h|heure|heures)")
 	var seconds := 0
 	if minutes > 0:
 		seconds = maxi(seconds, minutes * 60)
@@ -177,23 +203,45 @@ func _extract_duration_seconds(text: String) -> int:
 		seconds = maxi(seconds, hours * 3600)
 	return seconds
 
+func _looks_like_clock_time(text: String) -> bool:
+	return (
+		text.contains("réveil")
+		or text.contains("reveil")
+		or text.contains("réveiller")
+		or text.contains("reveiller")
+		or text.contains("se lever")
+		or text.contains("lever à")
+		or text.contains("lever a")
+		or text.contains("avant 7h")
+		or text.contains("avant 6h")
+	)
+
 func _extract_amount_info(text: String) -> Dictionary:
-	var km := _regex_int(text, "(\\d+)\\s*(?:km|kilometre|kilometres)")
+	var number := "([0-9][0-9\\s]*)"
+	var km := _regex_int(text, number + "\\s*(?:km|kilometre|kilometres)")
 	if km > 0:
 		return {"target": km, "label": "km"}
 
 	for keyword in ["pompes", "squats", "burpees", "tractions", "abdos"]:
-		var reps := _regex_int(text, "(\\d+)\\s*" + keyword)
+		var reps := _regex_int(text, number + "\\s*" + keyword)
 		if reps > 0:
 			return {"target": reps, "label": "reps"}
 
-	var steps := _regex_int(text, "(\\d+)\\s*pas")
+	var steps := _regex_int(text, number + "\\s*pas")
 	if steps > 0:
 		return {"target": steps, "label": "pas"}
 
-	var pages := _regex_int(text, "(\\d+)\\s*pages")
+	var pages := _regex_int(text, number + "\\s*pages")
 	if pages > 0:
 		return {"target": pages, "label": "pages"}
+
+	var sessions := _regex_int(text, number + "\\s*(?:sessions|session|seances|seance|séances|séance|series|serie|séries|série)")
+	if sessions > 0:
+		return {"target": sessions, "label": "sessions"}
+
+	var days := _regex_int(text, number + "\\s*(?:jours|jour|days|day)")
+	if days > 0:
+		return {"target": days, "label": "days"}
 
 	return {"target": 0, "label": ""}
 
@@ -204,7 +252,7 @@ func _regex_int(text: String, pattern: String) -> int:
 	var result := regex.search(text)
 	if result == null:
 		return 0
-	return int(result.get_string(1))
+	return int(result.get_string(1).replace(" ", ""))
 
 func _amount_step(target: int) -> int:
 	if target >= 1000:

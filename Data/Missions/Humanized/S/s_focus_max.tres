@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="MissionData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://Scripts/Resources/MissionData.gd" id="1_mission"]
+
+[resource]
+script = ExtResource("1_mission")
+id = "s_focus_max"
+title = "Focus MAX"
+description = "3 sessions de 30 minutes de cohérence cardiaque."
+rank = 6
+type = 0
+req_wis = 74
+base_xp = 12000
+reward_stat = 5
+reward_stat_amount = 3
+proof_required = true

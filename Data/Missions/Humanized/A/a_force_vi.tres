@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="MissionData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://Scripts/Resources/MissionData.gd" id="1_mission"]
+
+[resource]
+script = ExtResource("1_mission")
+id = "a_force_vi"
+title = "Force VI"
+description = "Faire 200 pompes dans la journée."
+rank = 5
+type = 0
+req_str = 55
+base_xp = 6400
+reward_stat = 1
+reward_stat_amount = 2

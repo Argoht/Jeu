@@ -10,7 +10,7 @@ extends RefCounted
 # ── Rarity tables ─────────────────────────────────────────────────────────────
 
 const RARITY_NAMES:   Array[String] = ["common", "rare", "epic", "legendary", "mythic"]
-const RARITY_WEIGHTS: Array[int]    = [60, 25, 10, 4, 1]
+const RARITY_WEIGHTS: Array[int]    = [850, 110, 29, 10, 1]
 const RARITY_MULTS:   Array[float]  = [1.0, 1.8, 3.0, 5.0, 8.0]
 const VITAL_STAT_MIN_BONUS := 10
 

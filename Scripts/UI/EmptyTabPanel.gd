@@ -14,6 +14,10 @@ var _music_label: Label = null
 var _sfx_label: Label = null
 var _placeholder_title_label: Label = null
 var _placeholder_body_label: Label = null
+var _placeholder_title_key := ""
+var _placeholder_body_key := ""
+var _save_warning_label: Label = null
+var _options_scroll: ScrollContainer = null
 
 func configure(tab_name: String, debug_callback: Callable) -> void:
 	name = tab_name + "Panel"
@@ -26,12 +30,16 @@ func configure(tab_name: String, debug_callback: Callable) -> void:
 		_build_grimoire()
 	elif tab_name == "Donjon":
 		_build_safe_dungeon_placeholder()
+	else:
+		_build_coming_soon()
 
 func set_debug_enabled(enabled: bool) -> void:
 	if is_instance_valid(_debug_toggle_button):
 		_debug_toggle_button.text = GlobalEngine.loc("option.debug_on") if enabled else GlobalEngine.loc("option.debug_off")
 
 func refresh_locale() -> void:
+	if is_instance_valid(_save_warning_label):
+		_save_warning_label.text = GlobalEngine.loc("save.warning")
 	if is_instance_valid(_language_title_label):
 		_language_title_label.text = GlobalEngine.loc("option.language")
 	if is_instance_valid(_english_button):
@@ -46,10 +54,10 @@ func refresh_locale() -> void:
 		_sfx_label.text = GlobalEngine.loc("option.sfx")
 	if is_instance_valid(_audio_title_label):
 		_audio_title_label.text = GlobalEngine.loc("option.audio")
-	if is_instance_valid(_placeholder_title_label):
-		_placeholder_title_label.text = GlobalEngine.loc("placeholder.dungeon_title")
-	if is_instance_valid(_placeholder_body_label):
-		_placeholder_body_label.text = GlobalEngine.loc("placeholder.dungeon_safe")
+	if is_instance_valid(_placeholder_title_label) and not _placeholder_title_key.is_empty():
+		_placeholder_title_label.text = GlobalEngine.loc(_placeholder_title_key)
+	if is_instance_valid(_placeholder_body_label) and not _placeholder_body_key.is_empty():
+		_placeholder_body_label.text = GlobalEngine.loc(_placeholder_body_key)
 	_update_mute_button_text()
 
 func _build_options(debug_callback: Callable) -> void:
@@ -62,14 +70,27 @@ func _build_options(debug_callback: Callable) -> void:
 
 	var options_box := VBoxContainer.new()
 	options_box.name = "Options"
-	options_box.add_theme_constant_override("separation", 10)
-	margin.add_child(options_box)
+	options_box.add_theme_constant_override("separation", 20)
+	options_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_options_scroll = ScrollContainer.new()
+	_options_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	_options_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	margin.add_child(_options_scroll)
+	_options_scroll.add_child(options_box)
+	_save_warning_label = Label.new()
+	_save_warning_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_save_warning_label.add_theme_font_size_override("font_size", 24)
+	_save_warning_label.add_theme_color_override("font_color", Color("ffbba5"))
+	_save_warning_label.text = GlobalEngine.loc("save.warning")
+	_save_warning_label.visible = not GlobalEngine.save_system.writes_allowed
+	options_box.add_child(_save_warning_label)
+	GlobalEngine.save_status_changed.connect(_on_save_status_changed)
 
 	if GlobalEngine.debug_tools_available():
 		_debug_toggle_button = Button.new()
 		_debug_toggle_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		_debug_toggle_button.custom_minimum_size = Vector2(0, 56)
-		_debug_toggle_button.add_theme_font_size_override("font_size", 12)
+		_debug_toggle_button.custom_minimum_size = Vector2(0, 96)
+		_debug_toggle_button.add_theme_font_size_override("font_size", 26)
 		_debug_toggle_button.add_theme_stylebox_override("normal", _button_style())
 		_debug_toggle_button.add_theme_color_override("font_color", Color("#00f2ff"))
 		_debug_toggle_button.pressed.connect(debug_callback)
@@ -79,10 +100,14 @@ func _build_options(debug_callback: Callable) -> void:
 	options_box.add_child(_make_separator())
 	_add_audio_options(options_box)
 
+func _on_save_status_changed(saved: bool) -> void:
+	if is_instance_valid(_save_warning_label):
+		_save_warning_label.visible = not saved
+
 func _add_language_options(parent: VBoxContainer) -> void:
 	_language_title_label = Label.new()
 	_language_title_label.text = GlobalEngine.loc("option.language")
-	_language_title_label.add_theme_font_size_override("font_size", 15)
+	_language_title_label.add_theme_font_size_override("font_size", 28)
 	_language_title_label.add_theme_color_override("font_color", Color("#00f2ff"))
 	parent.add_child(_language_title_label)
 
@@ -124,6 +149,8 @@ func _build_grimoire() -> void:
 		margin.add_child(bestiary)
 
 func _build_safe_dungeon_placeholder() -> void:
+	_placeholder_title_key = "placeholder.dungeon_title"
+	_placeholder_body_key = "placeholder.dungeon_safe"
 	var margin := MarginContainer.new()
 	margin.add_theme_constant_override("margin_left", 14)
 	margin.add_theme_constant_override("margin_top", 14)
@@ -150,11 +177,50 @@ func _build_safe_dungeon_placeholder() -> void:
 	text.add_theme_color_override("font_color", Color("#d9f7ff"))
 	box.add_child(text)
 
+func _build_coming_soon() -> void:
+	_placeholder_title_key = "placeholder.coming_soon"
+	_placeholder_body_key = "placeholder.coming_soon_body"
+	var margin := MarginContainer.new()
+	margin.add_theme_constant_override("margin_left", 14)
+	margin.add_theme_constant_override("margin_top", 14)
+	margin.add_theme_constant_override("margin_right", 14)
+	margin.add_theme_constant_override("margin_bottom", 14)
+	add_child(margin)
+
+	var center := CenterContainer.new()
+	center.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	center.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	margin.add_child(center)
+
+	var box := VBoxContainer.new()
+	box.add_theme_constant_override("separation", 8)
+	box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	center.add_child(box)
+
+	var title := Label.new()
+	_placeholder_title_label = title
+	title.text = GlobalEngine.loc(_placeholder_title_key)
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title.add_theme_font_size_override("font_size", 24)
+	title.add_theme_color_override("font_color", Color("#00f2ff"))
+	title.add_theme_color_override("font_shadow_color", Color(0.0, 0.35, 0.62, 0.72))
+	title.add_theme_constant_override("shadow_offset_y", 2)
+	box.add_child(title)
+
+	var text := Label.new()
+	_placeholder_body_label = text
+	text.text = GlobalEngine.loc(_placeholder_body_key)
+	text.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	text.autowrap_mode = TextServer.AUTOWRAP_WORD
+	text.add_theme_font_size_override("font_size", 13)
+	text.add_theme_color_override("font_color", Color("#d9f7ff"))
+	box.add_child(text)
+
 func _add_audio_options(parent: VBoxContainer) -> void:
 	var title := Label.new()
 	title.text = GlobalEngine.loc("option.audio")
 	_audio_title_label = title
-	title.add_theme_font_size_override("font_size", 15)
+	title.add_theme_font_size_override("font_size", 28)
 	title.add_theme_color_override("font_color", Color("#00f2ff"))
 	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	parent.add_child(title)
@@ -182,7 +248,7 @@ func _make_slider_row(label_key: String, slider: HSlider, value_label: Label) ->
 	var frame := PanelContainer.new()
 	frame.add_theme_stylebox_override("panel", _audio_row_style())
 	frame.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	frame.custom_minimum_size = Vector2(0, 52)
+	frame.custom_minimum_size = Vector2(0, 116)
 
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 8)
@@ -190,8 +256,8 @@ func _make_slider_row(label_key: String, slider: HSlider, value_label: Label) ->
 
 	var label := Label.new()
 	label.text = GlobalEngine.loc(label_key)
-	label.custom_minimum_size = Vector2(72, 0)
-	label.add_theme_font_size_override("font_size", 12)
+	label.custom_minimum_size = Vector2(124, 0)
+	label.add_theme_font_size_override("font_size", 26)
 	label.add_theme_color_override("font_color", Color("#d9f7ff"))
 	label.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	row.add_child(label)
@@ -203,9 +269,9 @@ func _make_slider_row(label_key: String, slider: HSlider, value_label: Label) ->
 	slider.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	row.add_child(slider)
 
-	value_label.custom_minimum_size = Vector2(42, 0)
+	value_label.custom_minimum_size = Vector2(82, 0)
 	value_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	value_label.add_theme_font_size_override("font_size", 12)
+	value_label.add_theme_font_size_override("font_size", 26)
 	value_label.add_theme_color_override("font_color", Color("#00f2ff"))
 	value_label.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	row.add_child(value_label)
@@ -214,7 +280,8 @@ func _make_slider_row(label_key: String, slider: HSlider, value_label: Label) ->
 
 func _make_volume_slider(value: float) -> HSlider:
 	var slider := HSlider.new()
-	slider.custom_minimum_size = Vector2(0, 36)
+	slider.custom_minimum_size = Vector2(0, 96)
+	slider.scrollable = false
 	slider.min_value = 0
 	slider.max_value = 100
 	slider.step = 1
@@ -257,8 +324,8 @@ func _make_da_button(text: String) -> Button:
 	var button := Button.new()
 	button.text = text
 	button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	button.custom_minimum_size = Vector2(0, 56)
-	button.add_theme_font_size_override("font_size", 12)
+	button.custom_minimum_size = Vector2(0, 96)
+	button.add_theme_font_size_override("font_size", 26)
 	button.add_theme_stylebox_override("normal", _button_style())
 	button.add_theme_stylebox_override("pressed", _button_style(Color(0.08, 0.04, 0.05, 1), Color("#ff4444")))
 	button.add_theme_stylebox_override("hover", _button_style(Color(0.06, 0.12, 0.19, 1), Color("#00f2ff")))

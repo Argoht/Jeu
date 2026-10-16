@@ -30,6 +30,8 @@ const WEEKLY_MISSION_TARGET := 1
 const HISTORY_LIMIT := 50
 const DAILY_FULL_REWARD_LIMIT := 10
 const DAILY_AD_REWARD_LIMIT := 2
+const HUMANIZED_MISSION_ROOT := "res://Data/Missions/Humanized/"
+const LEGACY_MISSION_ROOT := "res://Data/Missions/"
 const REQUIRED_MISSIONS: Array[MissionData] = [
 	preload("res://Data/Missions/F/f_reveil.tres"),
 	preload("res://Data/Missions/F/f_meditation.tres"),
@@ -59,23 +61,34 @@ func initialize(player_data) -> void:
 # ── Godot lifecycle ───────────────────────────────────────────────────────────
 
 func _process(delta: float) -> void:
-	if time_until_reset > 0.0:
-		time_until_reset -= delta
-	else:
-		_reset_daily()
+	advance_time(delta)
 
-	if time_until_weekly_reset > 0.0:
-		time_until_weekly_reset -= delta
-	else:
-		_reset_weekly()
+func advance_time(elapsed: float) -> void:
+	if not is_finite(elapsed) or elapsed < 0.0:
+		return
+	time_until_reset -= elapsed
+	time_until_weekly_reset -= elapsed
+	var daily_due := time_until_reset <= 0.0
+	var weekly_due := time_until_weekly_reset <= 0.0
+	if daily_due:
+		time_until_reset = reset_duration - fposmod(-time_until_reset, reset_duration)
+		available_missions = _retain_in_progress(available_missions)
+	if weekly_due:
+		time_until_weekly_reset = weekly_reset_duration - fposmod(-time_until_weekly_reset, weekly_reset_duration)
+		available_weekly_missions = _retain_in_progress(available_weekly_missions)
+	# A long absence refreshes each list once, preserving the next scheduled boundary.
+	if daily_due or weekly_due:
+		generate_missions()
+		missions_changed.emit()
 
 # ── Mission loading ───────────────────────────────────────────────────────────
 
 func load_all_missions() -> void:
-	var path := "res://Data/Missions/"
 	all_missions.clear()
-	_register_required_missions()
-	_load_missions_from_dir(path)
+	_load_missions_from_dir(HUMANIZED_MISSION_ROOT)
+	if all_missions.is_empty():
+		_register_required_missions()
+		_load_missions_from_dir(LEGACY_MISSION_ROOT)
 
 func sanitize_available_missions() -> void:
 	_sanitize_mission_list(available_missions, 15)
@@ -158,6 +171,8 @@ func ensure_missions_available() -> bool:
 # ── Mission actions ───────────────────────────────────────────────────────────
 
 func accept_mission(mission_dict: Dictionary) -> bool:
+	if not _owns_mission(mission_dict) or String(mission_dict.get("status", "")) != "available":
+		return false
 	var m_data: MissionData = all_missions.get(String(mission_dict.get("id", ""))) as MissionData
 	if not m_data: return false
 	if _player.hp <= 0: return false
@@ -181,6 +196,8 @@ func accept_mission(mission_dict: Dictionary) -> bool:
 	return true
 
 func process_result(mission_dict: Dictionary, success: bool) -> bool:
+	if not _owns_mission(mission_dict) or String(mission_dict.get("status", "")) != "in_progress":
+		return false
 	var m_data: MissionData = all_missions.get(String(mission_dict.get("id", ""))) as MissionData
 	if not m_data:
 		return false
@@ -215,7 +232,7 @@ func process_result(mission_dict: Dictionary, success: bool) -> bool:
 	return true
 
 func update_mission_progress(mission_dict: Dictionary, delta: int) -> bool:
-	if String(mission_dict.get("status", "")) != "in_progress":
+	if not _owns_mission(mission_dict) or String(mission_dict.get("status", "")) != "in_progress":
 		return false
 	var validation := get_validation_state(mission_dict)
 	var target := int(validation.get("target_amount", 0))
@@ -226,10 +243,16 @@ func update_mission_progress(mission_dict: Dictionary, delta: int) -> bool:
 	return true
 
 func update_mission_proof(mission_dict: Dictionary, proof_text: String) -> bool:
-	if String(mission_dict.get("status", "")) != "in_progress":
+	if not _owns_mission(mission_dict) or String(mission_dict.get("status", "")) != "in_progress":
 		return false
-	mission_dict["proof_text"] = proof_text.strip_edges()
+	mission_dict["proof_text"] = proof_text.strip_edges().left(2000)
 	return true
+
+func _owns_mission(mission: Dictionary) -> bool:
+	for entry in available_missions + available_weekly_missions:
+		if is_same(entry, mission):
+			return true
+	return false
 
 func get_validation_state(mission_dict: Dictionary) -> Dictionary:
 	var mission_id := String(mission_dict.get("id", ""))
@@ -449,9 +472,12 @@ func _today_day_index() -> int:
 
 func _format_duration(seconds: int) -> String:
 	var safe_seconds := maxi(0, seconds)
+	var days := int(float(safe_seconds) / 86400.0)
 	var hours := int(float(safe_seconds) / 3600.0)
 	var minutes := int(float(safe_seconds % 3600) / 60.0)
 	var secs := safe_seconds % 60
+	if days > 0:
+		return "%dj %02d:%02d:%02d" % [days, int(float(safe_seconds % 86400) / 3600.0), minutes, secs]
 	if hours > 0:
 		return "%d:%02d:%02d" % [hours, minutes, secs]
 	return "%02d:%02d" % [minutes, secs]

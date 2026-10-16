@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="MissionData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://Scripts/Resources/MissionData.gd" id="1_mission"]
+
+[resource]
+script = ExtResource("1_mission")
+id = "d_coherence_cardiaque"
+title = "Cohérence cardiaque"
+description = "Faire 2 session de cohérence cardiaque dans la journée."
+rank = 2
+type = 0
+req_wis = 16
+base_xp = 600
+reward_stat = 5
+reward_stat_amount = 1

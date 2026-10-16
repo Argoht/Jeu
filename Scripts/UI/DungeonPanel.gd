@@ -2,6 +2,8 @@ extends PanelContainer
 
 const MAX_DUNGEON_FLOOR := 100
 const FALLBACK_DUNGEON_BACKGROUND_PATH := "res://Assets/Dungeons/Backgrounds/dungeon_global_ambience.png"
+const DUNGEON_SCENE_MIN_HEIGHT := 490
+const BACKGROUND_TRANSITION_DURATION := 0.42
 
 var _scroll: ScrollContainer
 var _rank_select: OptionButton
@@ -11,12 +13,24 @@ var _checkpoint_label: Label
 var _enemy_label: Label
 var _enemy_hp_bar: ProgressBar
 var _background_rect: TextureRect
+var _background_transition_rect: TextureRect
+var _ambience_notice_label: Label
 var _enemy_sprite: TextureRect
+var _combat_stack: Control
 var _fx_layer: Control
-var _drop_popup: PanelContainer
+var _drop_popup_layer: CanvasLayer
+var _drop_popup: Control
+var _drop_card: PanelContainer
+var _drop_content: Control
+var _drop_icon: TextureRect
 var _drop_rarity_label: Label
 var _drop_label: Label
+var _drop_type_label: Label
+var _drop_power_label: Label
+var _drop_stats_box: VBoxContainer
+var _drop_compare_box: VBoxContainer
 var _drop_line: ColorRect
+var _drop_fx_layer: Control
 var _drop_popup_timer: Timer
 var _current_background_path := ""
 var _current_enemy_key := ""
@@ -24,6 +38,8 @@ var _last_combat_fx_seq := 0
 var _combat_fx_ready := false
 var _last_drop_key := ""
 var _texture_cache: Dictionary = {}
+var _background_transition_tween: Tween
+var _ambience_notice_tween: Tween
 var _enemy_arrival_tween: Tween
 var _energy_label: Label
 var _energy_bar: ProgressBar
@@ -98,16 +114,16 @@ func _build() -> void:
 	root.add_child(_checkpoint_label)
 
 	var scene_panel := PanelContainer.new()
-	scene_panel.custom_minimum_size = Vector2(0, 360)
+	scene_panel.custom_minimum_size = Vector2(0, DUNGEON_SCENE_MIN_HEIGHT)
 	scene_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	scene_panel.add_theme_stylebox_override("panel", _scene_style())
 	root.add_child(scene_panel)
 
-	var combat_stack := Control.new()
-	combat_stack.clip_contents = true
-	combat_stack.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	combat_stack.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	scene_panel.add_child(combat_stack)
+	_combat_stack = Control.new()
+	_combat_stack.clip_contents = true
+	_combat_stack.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_combat_stack.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	scene_panel.add_child(_combat_stack)
 
 	_background_rect = TextureRect.new()
 	_background_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -116,13 +132,23 @@ func _build() -> void:
 	_background_rect.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	_background_rect.modulate = Color(0.82, 0.94, 1.0, 0.92)
 	_background_rect.texture = load(FALLBACK_DUNGEON_BACKGROUND_PATH)
-	combat_stack.add_child(_background_rect)
+	_combat_stack.add_child(_background_rect)
 	_background_rect.set_anchors_preset(Control.PRESET_FULL_RECT)
+
+	_background_transition_rect = TextureRect.new()
+	_background_transition_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_background_transition_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	_background_transition_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+	_background_transition_rect.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	_background_transition_rect.modulate = Color(0.82, 0.94, 1.0, 0.0)
+	_background_transition_rect.hide()
+	_combat_stack.add_child(_background_transition_rect)
+	_background_transition_rect.set_anchors_preset(Control.PRESET_FULL_RECT)
 
 	var scrim := ColorRect.new()
 	scrim.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	scrim.color = Color(0.006, 0.011, 0.019, 0.18)
-	combat_stack.add_child(scrim)
+	_combat_stack.add_child(scrim)
 	scrim.set_anchors_preset(Control.PRESET_FULL_RECT)
 
 	_enemy_sprite = TextureRect.new()
@@ -132,7 +158,7 @@ func _build() -> void:
 	_enemy_sprite.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	_enemy_sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	_enemy_sprite.modulate = Color(1, 1, 1, 0.88)
-	combat_stack.add_child(_enemy_sprite)
+	_combat_stack.add_child(_enemy_sprite)
 	_enemy_sprite.anchor_left = 0.30
 	_enemy_sprite.anchor_top = 0.14
 	_enemy_sprite.anchor_right = 0.70
@@ -144,16 +170,36 @@ func _build() -> void:
 
 	_fx_layer = Control.new()
 	_fx_layer.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	combat_stack.add_child(_fx_layer)
+	_combat_stack.add_child(_fx_layer)
 	_fx_layer.set_anchors_preset(Control.PRESET_FULL_RECT)
 
-	_build_drop_popup(combat_stack)
+	_ambience_notice_label = _make_label("", 13, Color("#ffd166"))
+	_ambience_notice_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_ambience_notice_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_ambience_notice_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	_ambience_notice_label.autowrap_mode = TextServer.AUTOWRAP_WORD
+	_ambience_notice_label.add_theme_color_override("font_outline_color", Color(0.0, 0.012, 0.025, 1.0))
+	_ambience_notice_label.add_theme_constant_override("outline_size", 2)
+	_ambience_notice_label.add_theme_stylebox_override("normal", _ambience_notice_style())
+	_ambience_notice_label.modulate = Color(1, 1, 1, 0)
+	_ambience_notice_label.hide()
+	_combat_stack.add_child(_ambience_notice_label)
+	_ambience_notice_label.anchor_left = 0.08
+	_ambience_notice_label.anchor_top = 0.08
+	_ambience_notice_label.anchor_right = 0.92
+	_ambience_notice_label.anchor_bottom = 0.08
+	_ambience_notice_label.offset_left = 0
+	_ambience_notice_label.offset_top = 0
+	_ambience_notice_label.offset_right = 0
+	_ambience_notice_label.offset_bottom = 42
+
+	_build_drop_popup()
 
 	_event_panel = PanelContainer.new()
 	_event_panel.visible = false
 	_event_panel.mouse_filter = Control.MOUSE_FILTER_STOP
 	_event_panel.add_theme_stylebox_override("panel", _event_style())
-	combat_stack.add_child(_event_panel)
+	_combat_stack.add_child(_event_panel)
 	_event_panel.anchor_left = 0.06
 	_event_panel.anchor_top = 0.26
 	_event_panel.anchor_right = 0.94
@@ -265,7 +311,11 @@ func _refresh() -> void:
 	if bool(state.get("in_run", false)):
 		rank_for_display = String(state.get("active_rank", selected_rank))
 
-	_refresh_background(String(state.get("background_path", "")))
+	_refresh_background(
+		String(state.get("background_path", "")),
+		int(state.get("background_stage", 0)),
+		bool(state.get("in_run", false))
+	)
 	_title_label.text = GlobalEngine.loc("dungeon.rank_title", [GlobalEngine.dungeon_system.get_dungeon_name(rank_for_display).to_upper(), rank_for_display])
 	_status_label.text = _status_text(state, rank_for_display)
 	_checkpoint_label.text = _checkpoint_text(state, rank_for_display)
@@ -352,17 +402,76 @@ func _refresh_enemy(state: Dictionary) -> void:
 	_enemy_hp_bar.value = int(enemy.get("hp", 0))
 	_refresh_enemy_sprite(enemy)
 
-func _refresh_background(path: String) -> void:
+func _refresh_background(path: String, stage: int = 0, show_notice: bool = false) -> void:
 	if not is_instance_valid(_background_rect):
 		return
 	if path.is_empty():
 		path = FALLBACK_DUNGEON_BACKGROUND_PATH
 	if path == _current_background_path:
 		return
-	_current_background_path = path
 	var texture = load(path)
 	if texture is Texture2D:
+		var had_background := not _current_background_path.is_empty()
+		_transition_background(texture)
+		_current_background_path = path
+		if had_background and show_notice:
+			_show_ambience_notice(stage)
+
+func _transition_background(texture: Texture2D) -> void:
+	if not is_instance_valid(_background_rect):
+		return
+	if _background_transition_tween != null:
+		_background_transition_tween.kill()
+		_background_transition_tween = null
+
+	var previous_texture = _background_rect.texture
+	if previous_texture == null or _current_background_path.is_empty() or not is_instance_valid(_background_transition_rect):
 		_background_rect.texture = texture
+		_background_rect.modulate = Color(0.82, 0.94, 1.0, 0.92)
+		if is_instance_valid(_background_transition_rect):
+			_background_transition_rect.hide()
+		return
+
+	_background_transition_rect.texture = previous_texture
+	_background_transition_rect.modulate = Color(0.82, 0.94, 1.0, 0.92)
+	_background_transition_rect.show()
+	_background_rect.texture = texture
+	_background_rect.modulate = Color(0.82, 0.94, 1.0, 0.92)
+
+	_background_transition_tween = create_tween()
+	_background_transition_tween.tween_property(
+		_background_transition_rect,
+		"modulate:a",
+		0.0,
+		BACKGROUND_TRANSITION_DURATION
+	).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	_background_transition_tween.tween_callback(_finish_background_transition)
+
+func _finish_background_transition() -> void:
+	if is_instance_valid(_background_transition_rect):
+		_background_transition_rect.hide()
+		_background_transition_rect.texture = null
+	_background_transition_tween = null
+
+func _show_ambience_notice(stage: int) -> void:
+	if not is_instance_valid(_ambience_notice_label):
+		return
+	if _ambience_notice_tween != null:
+		_ambience_notice_tween.kill()
+		_ambience_notice_tween = null
+	_ambience_notice_label.text = GlobalEngine.dungeon_system.get_ambience_message(stage)
+	_ambience_notice_label.show()
+	_ambience_notice_label.modulate = Color(1.0, 1.0, 1.0, 0.0)
+	_ambience_notice_tween = create_tween()
+	_ambience_notice_tween.set_parallel(true)
+	_ambience_notice_tween.tween_property(_ambience_notice_label, "modulate:a", 1.0, 0.16).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	_ambience_notice_tween.tween_property(_ambience_notice_label, "modulate:a", 0.0, 0.34).set_delay(1.65).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	_ambience_notice_tween.chain().tween_callback(_hide_ambience_notice)
+
+func _hide_ambience_notice() -> void:
+	if is_instance_valid(_ambience_notice_label):
+		_ambience_notice_label.hide()
+	_ambience_notice_tween = null
 
 func _refresh_enemy_sprite(enemy: Dictionary) -> void:
 	if not is_instance_valid(_enemy_sprite):
@@ -435,6 +544,8 @@ func _play_slash_fx(damage: int, heavy: bool) -> void:
 	if not is_instance_valid(_fx_layer) or not is_visible_in_tree():
 		return
 	var center := _effect_center()
+	_shake_combat_scene(7.0 if heavy else 3.5)
+	_spawn_hit_flash(center, Color("#00f2ff") if heavy else Color("#f5f7fb"), heavy)
 	var count := 2 if heavy else 1
 	for i in range(count):
 		var slash := ColorRect.new()
@@ -454,6 +565,22 @@ func _play_slash_fx(damage: int, heavy: bool) -> void:
 
 	if damage > 0:
 		_play_damage_label(damage, heavy)
+
+func _spawn_hit_flash(center: Vector2, color: Color, heavy: bool) -> void:
+	var flash := ColorRect.new()
+	flash.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	flash.color = Color(color.r, color.g, color.b, 0.52)
+	_fx_layer.add_child(flash)
+	var size_px := 78.0 if heavy else 52.0
+	flash.size = Vector2(size_px, size_px)
+	flash.position = center - flash.size * 0.5
+	flash.rotation = deg_to_rad(45.0)
+	flash.scale = Vector2(0.55, 0.55)
+	var tween := create_tween()
+	tween.set_parallel(true)
+	tween.tween_property(flash, "scale", Vector2(1.35, 1.35), 0.18).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	tween.tween_property(flash, "modulate:a", 0.0, 0.18)
+	tween.chain().tween_callback(_queue_free_fx.bind(flash))
 
 func _play_damage_label(damage: int, heavy: bool) -> void:
 	if not is_instance_valid(_fx_layer):
@@ -479,22 +606,46 @@ func _play_death_fx() -> void:
 	if not is_instance_valid(_fx_layer) or not is_visible_in_tree():
 		return
 	var center := _effect_center()
-	for i in range(14):
+	_shake_combat_scene(9.0)
+	_spawn_screen_flash(Color(0.85, 0.96, 1.0, 0.16), 0.24)
+	for i in range(30):
 		var particle := ColorRect.new()
 		particle.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		particle.color = [Color("#00f2ff"), Color("#8be9fd"), Color("#f5f7fb"), Color("#5b6f86")].pick_random()
 		_fx_layer.add_child(particle)
-		var size_px := randf_range(4.0, 7.0)
+		var size_px := randf_range(3.0, 9.0)
 		particle.size = Vector2(size_px, size_px)
-		particle.position = center
+		particle.position = center + Vector2(randf_range(-16.0, 16.0), randf_range(-18.0, 18.0))
 		var angle := randf() * TAU
-		var distance := randf_range(32.0, 88.0)
+		var distance := randf_range(52.0, 132.0)
 		var target := center + Vector2(cos(angle), sin(angle)) * distance
 		var tween := create_tween()
 		tween.set_parallel(true)
-		tween.tween_property(particle, "position", target, 0.42).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-		tween.tween_property(particle, "modulate:a", 0.0, 0.42).set_delay(0.08)
+		var duration := randf_range(0.34, 0.62)
+		tween.tween_property(particle, "position", target, duration).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+		tween.tween_property(particle, "scale", Vector2(0.25, 0.25), duration)
+		tween.tween_property(particle, "modulate:a", 0.0, duration).set_delay(0.06)
 		tween.chain().tween_callback(_queue_free_fx.bind(particle))
+
+func _shake_combat_scene(amount: float) -> void:
+	if not is_instance_valid(_combat_stack):
+		return
+	var tween := create_tween()
+	tween.tween_property(_combat_stack, "position", Vector2(randf_range(-amount, amount), randf_range(-amount, amount)), 0.035)
+	tween.tween_property(_combat_stack, "position", Vector2(randf_range(-amount * 0.6, amount * 0.6), randf_range(-amount * 0.6, amount * 0.6)), 0.035)
+	tween.tween_property(_combat_stack, "position", Vector2.ZERO, 0.055)
+
+func _spawn_screen_flash(color: Color, duration: float) -> void:
+	if not is_instance_valid(_fx_layer):
+		return
+	var flash := ColorRect.new()
+	flash.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	flash.color = color
+	flash.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_fx_layer.add_child(flash)
+	var tween := create_tween()
+	tween.tween_property(flash, "modulate:a", 0.0, duration).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	tween.tween_callback(_queue_free_fx.bind(flash))
 
 func _effect_center() -> Vector2:
 	if is_instance_valid(_enemy_sprite) and _enemy_sprite.visible:
@@ -503,53 +654,103 @@ func _effect_center() -> Vector2:
 		return _fx_layer.size * Vector2(0.5, 0.48)
 	return Vector2(180, 140)
 
-func _queue_free_fx(node: Node) -> void:
+func _queue_free_fx(node) -> void:
 	if is_instance_valid(node):
 		node.queue_free()
 
-func _build_drop_popup(parent: Control) -> void:
+func _build_drop_popup() -> void:
+	_drop_popup_layer = CanvasLayer.new()
+	_drop_popup_layer.layer = 80
+	add_child(_drop_popup_layer)
+
 	_drop_popup = PanelContainer.new()
 	_drop_popup.visible = false
-	_drop_popup.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_drop_popup.mouse_filter = Control.MOUSE_FILTER_STOP
+	_drop_popup.gui_input.connect(_on_drop_popup_gui_input)
 	_drop_popup.add_theme_stylebox_override("panel", _drop_popup_style())
-	parent.add_child(_drop_popup)
-	_drop_popup.anchor_left = 0.08
-	_drop_popup.anchor_top = 0.68
-	_drop_popup.anchor_right = 0.92
-	_drop_popup.anchor_bottom = 0.68
-	_drop_popup.offset_bottom = 82
+	_drop_popup_layer.add_child(_drop_popup)
+	_drop_popup.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_drop_popup.offset_left = 0
+	_drop_popup.offset_top = 0
+	_drop_popup.offset_right = 0
+	_drop_popup.offset_bottom = 0
+	_drop_card = _drop_popup as PanelContainer
+
+	var center := CenterContainer.new()
+	center.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_drop_popup.add_child(center)
+
+	_drop_fx_layer = Control.new()
+	_drop_fx_layer.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_drop_fx_layer.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_drop_popup.add_child(_drop_fx_layer)
+	_drop_popup.move_child(center, _drop_popup.get_child_count() - 1)
 
 	var margin := MarginContainer.new()
-	margin.add_theme_constant_override("margin_left", 12)
-	margin.add_theme_constant_override("margin_top", 8)
-	margin.add_theme_constant_override("margin_right", 12)
-	margin.add_theme_constant_override("margin_bottom", 8)
-	_drop_popup.add_child(margin)
+	_drop_content = margin
+	margin.custom_minimum_size = Vector2(360, 260)
+	margin.add_theme_constant_override("margin_left", 18)
+	margin.add_theme_constant_override("margin_top", 16)
+	margin.add_theme_constant_override("margin_right", 18)
+	margin.add_theme_constant_override("margin_bottom", 16)
+	center.add_child(margin)
 
 	var box := VBoxContainer.new()
-	box.add_theme_constant_override("separation", 3)
+	box.alignment = BoxContainer.ALIGNMENT_CENTER
+	box.add_theme_constant_override("separation", 8)
 	margin.add_child(box)
+
+	_drop_icon = TextureRect.new()
+	_drop_icon.custom_minimum_size = Vector2(92, 92)
+	_drop_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	_drop_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	_drop_icon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	_drop_icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	box.add_child(_drop_icon)
 
 	_drop_rarity_label = Label.new()
 	_drop_rarity_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_drop_rarity_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	_drop_rarity_label.add_theme_font_size_override("font_size", 10)
+	_drop_rarity_label.add_theme_font_size_override("font_size", 18)
 	_drop_rarity_label.add_theme_color_override("font_outline_color", Color(0.0, 0.012, 0.025, 1.0))
-	_drop_rarity_label.add_theme_constant_override("outline_size", 1)
+	_drop_rarity_label.add_theme_constant_override("outline_size", 3)
 	box.add_child(_drop_rarity_label)
 
 	_drop_label = Label.new()
 	_drop_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_drop_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	_drop_label.add_theme_font_size_override("font_size", 16)
+	_drop_label.autowrap_mode = TextServer.AUTOWRAP_WORD
+	_drop_label.add_theme_font_size_override("font_size", 30)
 	_drop_label.add_theme_color_override("font_outline_color", Color(0.0, 0.012, 0.025, 1.0))
-	_drop_label.add_theme_constant_override("outline_size", 2)
+	_drop_label.add_theme_constant_override("outline_size", 4)
 	box.add_child(_drop_label)
 
 	_drop_line = ColorRect.new()
 	_drop_line.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_drop_line.custom_minimum_size = Vector2(0, 2)
+	_drop_line.custom_minimum_size = Vector2(0, 4)
 	box.add_child(_drop_line)
+
+	_drop_type_label = Label.new()
+	_drop_type_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_drop_type_label.add_theme_color_override("font_color", Color(0.76, 0.80, 0.86))
+	_drop_type_label.add_theme_font_size_override("font_size", 13)
+	box.add_child(_drop_type_label)
+
+	_drop_power_label = Label.new()
+	_drop_power_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_drop_power_label.add_theme_color_override("font_color", Color("#ffd166"))
+	_drop_power_label.add_theme_font_size_override("font_size", 15)
+	box.add_child(_drop_power_label)
+
+	_drop_stats_box = VBoxContainer.new()
+	_drop_stats_box.alignment = BoxContainer.ALIGNMENT_CENTER
+	_drop_stats_box.add_theme_constant_override("separation", 3)
+	box.add_child(_drop_stats_box)
+
+	_drop_compare_box = VBoxContainer.new()
+	_drop_compare_box.alignment = BoxContainer.ALIGNMENT_CENTER
+	_drop_compare_box.add_theme_constant_override("separation", 3)
+	box.add_child(_drop_compare_box)
 
 	_drop_popup_timer = Timer.new()
 	_drop_popup_timer.one_shot = true
@@ -576,51 +777,198 @@ func _show_drop_popup(drop: Dictionary) -> void:
 		return
 	var rarity := str(drop.get("rarity", "common"))
 	var rarity_color := _rarity_color(rarity)
+	var intensity := _rarity_intensity(rarity)
 	var rarity_name := _rarity_label(rarity)
+	var icon = GlobalEngine.get_item_icon(drop)
+	if icon is Texture2D:
+		_drop_icon.texture = icon
+		_drop_icon.show()
+	else:
+		_drop_icon.texture = null
+		_drop_icon.hide()
 	_drop_rarity_label.text = GlobalEngine.loc("dungeon.loot", [rarity_name])
 	_drop_rarity_label.add_theme_color_override("font_color", rarity_color)
+	_drop_rarity_label.add_theme_font_size_override("font_size", 17 + intensity * 2)
 	_drop_label.text = GlobalEngine.localize_item_name(drop).to_upper()
 	_drop_label.add_theme_color_override("font_color", rarity_color)
+	_drop_label.add_theme_font_size_override("font_size", 28 + intensity * 3)
+	_drop_type_label.text = _type_label(String(drop.get("type", "")))
+	_drop_power_label.text = GlobalEngine.loc("item.power", [int(drop.get("base_power", 0))])
+	_refresh_drop_stats(drop)
+	_refresh_drop_comparison(drop)
 	if is_instance_valid(_drop_line):
 		_drop_line.color = Color(rarity_color.r, rarity_color.g, rarity_color.b, 0.85)
-	_drop_popup.add_theme_stylebox_override("panel", _drop_popup_style(rarity_color))
+	if is_instance_valid(_drop_card):
+		_drop_card.add_theme_stylebox_override("panel", _drop_popup_style(rarity_color, intensity))
 	_drop_popup.show()
 	_drop_popup.modulate = Color(1, 1, 1, 0)
-	_drop_popup.scale = Vector2(0.90, 0.90)
+	if is_instance_valid(_drop_content):
+		_drop_content.pivot_offset = _drop_content.size * 0.5
+		_drop_content.rotation = 0.0
+		_drop_content.scale = Vector2(0.92, 0.92)
+	_spawn_drop_screen_flash(Color(rarity_color.r, rarity_color.g, rarity_color.b, 0.14 + float(intensity) * 0.035), 0.42 + float(intensity) * 0.05)
+	_shake_combat_scene(float(intensity) * 2.0)
 	var tween := create_tween()
 	tween.set_parallel(true)
-	tween.tween_property(_drop_popup, "modulate:a", 1.0, 0.16)
-	tween.tween_property(_drop_popup, "scale", Vector2.ONE, 0.28).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-	_spawn_drop_sparks(rarity_color)
+	tween.tween_property(_drop_popup, "modulate:a", 1.0, 0.14)
+	if is_instance_valid(_drop_content):
+		tween.tween_property(_drop_content, "scale", Vector2.ONE, 0.26).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	if intensity >= 3 and is_instance_valid(_drop_content):
+		tween.tween_property(_drop_content, "rotation", deg_to_rad(0.8), 0.05)
+		tween.tween_property(_drop_content, "rotation", deg_to_rad(-0.8), 0.05).set_delay(0.05)
+		tween.tween_property(_drop_content, "rotation", 0.0, 0.08).set_delay(0.10)
+	_spawn_drop_sparks(rarity_color, intensity)
 	if is_instance_valid(_drop_popup_timer):
+		_drop_popup_timer.wait_time = 2.8 + float(intensity) * 0.55
 		_drop_popup_timer.start()
 
 func _hide_drop_popup() -> void:
+	if is_instance_valid(_drop_popup_timer):
+		_drop_popup_timer.stop()
 	if is_instance_valid(_drop_popup):
 		_drop_popup.hide()
 
-func _spawn_drop_sparks(color: Color) -> void:
-	if not is_instance_valid(_fx_layer) or not is_instance_valid(_drop_popup):
+func _on_drop_popup_gui_input(event: InputEvent) -> void:
+	if event is InputEventMouseButton and event.pressed:
+		_hide_drop_popup()
+	elif event is InputEventScreenTouch and event.pressed:
+		_hide_drop_popup()
+
+func _refresh_drop_stats(drop: Dictionary) -> void:
+	if not is_instance_valid(_drop_stats_box):
 		return
-	var rect := _drop_popup.get_rect()
-	var center := rect.position + rect.size * 0.5
-	for i in range(16):
+	for child in _drop_stats_box.get_children():
+		child.queue_free()
+
+	var bonuses: Dictionary = drop.get("stat_bonuses", {})
+	if bonuses.is_empty():
+		var empty_line := Label.new()
+		empty_line.text = GlobalEngine.loc("item.no_bonus")
+		empty_line.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		empty_line.add_theme_color_override("font_color", Color(0.70, 0.74, 0.80))
+		empty_line.add_theme_font_size_override("font_size", 13)
+		_drop_stats_box.add_child(empty_line)
+		return
+
+	for stat_key in bonuses.keys():
+		var line := Label.new()
+		line.text = "+ %d %s" % [int(bonuses[stat_key]), String(stat_key).to_upper()]
+		line.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		line.add_theme_color_override("font_color", Color("#00ff88"))
+		line.add_theme_font_size_override("font_size", 14)
+		_drop_stats_box.add_child(line)
+
+func _refresh_drop_comparison(drop: Dictionary) -> void:
+	if not is_instance_valid(_drop_compare_box):
+		return
+	for child in _drop_compare_box.get_children():
+		child.queue_free()
+
+	var slot := String(drop.get("type", ""))
+	if slot.is_empty() or GlobalEngine.inventory_system == null:
+		_drop_compare_box.hide()
+		return
+	_drop_compare_box.show()
+
+	_add_drop_compare_line(GlobalEngine.loc("item.compare.title"), Color(0.76, 0.82, 0.90), 12)
+	var equipped = GlobalEngine.inventory_system.equipment.get(slot, null)
+	if not (equipped is Dictionary) or equipped.is_empty():
+		_add_drop_compare_line(GlobalEngine.loc("item.compare.none"), Color(0.62, 0.66, 0.74), 12)
+		return
+
+	var current_power := int(equipped.get("base_power", 0))
+	var new_power := int(drop.get("base_power", 0))
+	var power_delta := new_power - current_power
+	_add_drop_compare_line(GlobalEngine.loc("item.compare.current_power", [current_power]), Color(0.62, 0.66, 0.74), 12)
+	_add_drop_compare_line(
+		GlobalEngine.loc("item.compare.new_power", [new_power, _signed_delta(power_delta)]),
+		_delta_color(power_delta),
+		13
+	)
+
+	var current_bonuses := _safe_bonus_dict(equipped)
+	var new_bonuses := _safe_bonus_dict(drop)
+	var stat_keys: Array = []
+	for stat_key in current_bonuses.keys():
+		if not stat_keys.has(stat_key):
+			stat_keys.append(stat_key)
+	for stat_key in new_bonuses.keys():
+		if not stat_keys.has(stat_key):
+			stat_keys.append(stat_key)
+	stat_keys.sort()
+
+	for stat_key in stat_keys:
+		var delta := int(new_bonuses.get(stat_key, 0)) - int(current_bonuses.get(stat_key, 0))
+		if delta == 0:
+			continue
+		_add_drop_compare_line(
+			GlobalEngine.loc("item.compare.stat_delta", [String(stat_key).to_upper(), _signed_delta(delta)]),
+			_delta_color(delta),
+			12
+		)
+
+func _add_drop_compare_line(text: String, color: Color, font_size: int) -> void:
+	var line := Label.new()
+	line.text = text
+	line.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	line.add_theme_color_override("font_color", color)
+	line.add_theme_font_size_override("font_size", font_size)
+	_drop_compare_box.add_child(line)
+
+func _safe_bonus_dict(item: Dictionary) -> Dictionary:
+	var raw = item.get("stat_bonuses", {})
+	if raw is Dictionary:
+		return raw
+	return {}
+
+func _signed_delta(value: int) -> String:
+	if value > 0:
+		return "+%d" % value
+	return str(value)
+
+func _delta_color(value: int) -> Color:
+	if value > 0:
+		return Color("#00ff88")
+	if value < 0:
+		return Color("#ff667a")
+	return Color(0.72, 0.76, 0.84)
+
+func _spawn_drop_screen_flash(color: Color, duration: float) -> void:
+	if not is_instance_valid(_drop_popup) or not is_instance_valid(_drop_fx_layer):
+		return
+	var flash := ColorRect.new()
+	flash.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	flash.color = color
+	flash.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_drop_fx_layer.add_child(flash)
+	var tween := create_tween()
+	tween.tween_property(flash, "modulate:a", 0.0, duration).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	tween.tween_callback(_queue_free_fx.bind(flash))
+
+func _spawn_drop_sparks(color: Color, intensity: int = 1) -> void:
+	if not is_instance_valid(_drop_popup) or not is_instance_valid(_drop_fx_layer):
+		return
+	var rect := Rect2(Vector2.ZERO, _drop_popup.size)
+	var center := rect.size * 0.5
+	var spark_count := 30 + intensity * 14
+	for i in range(spark_count):
 		var spark := ColorRect.new()
 		spark.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		spark.color = Color(color.r, color.g, color.b, 0.88)
-		_fx_layer.add_child(spark)
-		var size_px := 3.0 + float(i % 3)
+		_drop_fx_layer.add_child(spark)
+		var size_px := 3.0 + float(i % (2 + intensity))
 		spark.size = Vector2(size_px, size_px)
 		var start_x := randf_range(rect.position.x + 16.0, rect.position.x + maxf(18.0, rect.size.x - 16.0))
 		var start_y := randf_range(rect.position.y + 6.0, rect.position.y + rect.size.y - 6.0)
 		spark.position = Vector2(start_x, start_y)
 		var angle := randf() * TAU
-		var distance := randf_range(22.0, 70.0)
+		var distance := randf_range(72.0, 160.0 + float(intensity) * 26.0)
 		var target := center + Vector2(cos(angle), sin(angle)) * distance
 		var tween := create_tween()
 		tween.set_parallel(true)
-		tween.tween_property(spark, "position", target, 0.44).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-		tween.tween_property(spark, "modulate:a", 0.0, 0.44).set_delay(0.08)
+		var duration := 0.50 + float(intensity) * 0.07
+		tween.tween_property(spark, "position", target, duration).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+		tween.tween_property(spark, "modulate:a", 0.0, duration).set_delay(0.08)
 		tween.chain().tween_callback(_queue_free_fx.bind(spark))
 
 func _make_enemy_texture(visual: Dictionary) -> Texture2D:
@@ -700,13 +1048,15 @@ func _refresh_log(state: Dictionary) -> void:
 func _refresh_buttons(state: Dictionary, selected_rank: String, phase: String) -> void:
 	var in_run := bool(state.get("in_run", false))
 	var energy := int(state.get("player_energy", 0))
+	var heal_cost := int(state.get("heal_energy_cost", 70))
+	var heals_remaining := int(state.get("heals_remaining", 0))
 	var is_combat := phase == "combat"
 	var is_clear := phase == "floor_cleared"
 
 	_rank_select.disabled = in_run
 	_auto_button.text = GlobalEngine.loc("dungeon.auto")
 	_special_button.text = GlobalEngine.loc("dungeon.special")
-	_heal_button.text = GlobalEngine.loc("dungeon.heal")
+	_heal_button.text = GlobalEngine.loc("dungeon.heal_limited", [heals_remaining])
 	_shield_button.text = GlobalEngine.loc("dungeon.shield")
 	_next_button.text = GlobalEngine.loc("dungeon.next")
 	_forfeit_button.text = GlobalEngine.loc("dungeon.leave")
@@ -723,7 +1073,7 @@ func _refresh_buttons(state: Dictionary, selected_rank: String, phase: String) -
 
 	_auto_button.disabled = not is_combat
 	_special_button.disabled = energy < 50
-	_heal_button.disabled = energy < 45
+	_heal_button.disabled = energy < heal_cost or heals_remaining <= 0
 	_shield_button.disabled = energy < 35
 	_next_button.disabled = not is_clear
 
@@ -788,7 +1138,10 @@ func _make_button(text: String, callback: Callable) -> Button:
 	button.custom_minimum_size = Vector2(0, 56)
 	button.add_theme_font_size_override("font_size", 12)
 	button.add_theme_stylebox_override("normal", _button_style())
-	button.pressed.connect(callback)
+	button.button_down.connect(func(): GlobalEngine.play_ui_select(-13.0))
+	button.pressed.connect(func():
+		callback.call()
+	)
 	return button
 
 func _panel_style() -> StyleBoxFlat:
@@ -853,21 +1206,34 @@ func _event_choice_style(bg: Color = Color(0.032, 0.076, 0.120, 0.94), border: C
 	style.corner_radius_bottom_right = 5
 	return style
 
-func _drop_popup_style(accent: Color = Color("#00f2ff")) -> StyleBoxFlat:
+func _drop_popup_style(accent: Color = Color("#00f2ff"), intensity: int = 1) -> StyleBoxFlat:
 	var style := StyleBoxFlat.new()
-	style.bg_color = Color(0.015, 0.025, 0.035, 0.94)
-	style.border_width_left = 1
-	style.border_width_top = 1
-	style.border_width_right = 1
-	style.border_width_bottom = 2
+	style.bg_color = Color(0.005 + float(intensity) * 0.006, 0.010, 0.018, 0.88)
+	var border := 3 if intensity >= 3 else 2
+	style.border_width_left = border
+	style.border_width_top = border
+	style.border_width_right = border
+	style.border_width_bottom = border
 	style.border_color = Color(accent.r, accent.g, accent.b, 0.86)
-	style.corner_radius_top_left = 5
-	style.corner_radius_top_right = 5
-	style.corner_radius_bottom_left = 5
-	style.corner_radius_bottom_right = 5
-	style.shadow_color = Color(accent.r, accent.g, accent.b, 0.28)
-	style.shadow_size = 12
+	style.corner_radius_top_left = 0
+	style.corner_radius_top_right = 0
+	style.corner_radius_bottom_left = 0
+	style.corner_radius_bottom_right = 0
+	style.shadow_color = Color(accent.r, accent.g, accent.b, 0.35 + float(intensity) * 0.08)
+	style.shadow_size = 18 + intensity * 8
 	return style
+
+func _rarity_intensity(rarity: String) -> int:
+	match rarity:
+		"rare":
+			return 2
+		"epic":
+			return 3
+		"legendary":
+			return 4
+		"mythic":
+			return 5
+	return 1
 
 func _rarity_color(rarity: String) -> Color:
 	match rarity:
@@ -892,6 +1258,20 @@ func _rarity_label(rarity: String) -> String:
 		"mythic":
 			return GlobalEngine.loc("item.rarity.mythic").to_upper()
 	return GlobalEngine.loc("item.rarity.common").to_upper()
+
+func _type_label(item_type: String) -> String:
+	match item_type:
+		"weapon":
+			return GlobalEngine.loc("item.type.weapon")
+		"armor":
+			return GlobalEngine.loc("item.type.armor")
+		"legs":
+			return GlobalEngine.loc("item.type.legs")
+		"feet":
+			return GlobalEngine.loc("item.type.feet")
+		"accessory":
+			return GlobalEngine.loc("item.type.accessory")
+	return item_type.capitalize()
 
 func _localized_enemy_type(type_name: String) -> String:
 	var key := "dungeon.enemy_type.%s" % type_name
@@ -919,6 +1299,24 @@ func _log_style() -> StyleBoxFlat:
 	style.content_margin_top = 8
 	style.content_margin_right = 10
 	style.content_margin_bottom = 8
+	return style
+
+func _ambience_notice_style() -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0.010, 0.016, 0.024, 0.82)
+	style.border_width_left = 1
+	style.border_width_top = 1
+	style.border_width_right = 1
+	style.border_width_bottom = 1
+	style.border_color = Color(1.0, 0.82, 0.32, 0.48)
+	style.corner_radius_top_left = 4
+	style.corner_radius_top_right = 4
+	style.corner_radius_bottom_left = 4
+	style.corner_radius_bottom_right = 4
+	style.content_margin_left = 10
+	style.content_margin_top = 6
+	style.content_margin_right = 10
+	style.content_margin_bottom = 6
 	return style
 
 func _button_style() -> StyleBoxFlat:

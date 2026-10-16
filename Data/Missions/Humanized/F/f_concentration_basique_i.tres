@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="MissionData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://Scripts/Resources/MissionData.gd" id="1_mission"]
+
+[resource]
+script = ExtResource("1_mission")
+id = "f_concentration_basique_i"
+title = "Concentration Basique I"
+description = "Lire 10 pages d’un livre."
+rank = 0
+type = 0
+base_xp = 100
+reward_stat = 4
+reward_stat_amount = 1

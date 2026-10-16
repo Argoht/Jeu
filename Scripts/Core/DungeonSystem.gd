@@ -8,9 +8,12 @@ signal run_completed(rank)
 const MAX_FLOOR = 100
 const CHECKPOINT_STEP = 10
 const ENERGY_MAX = 100
-const DROP_CHANCE_BASE = 42
-const DROP_CHANCE_RANK_STEP = 3
-const DROP_CHANCE_MINOR_BONUS = 18
+const HEAL_ENERGY_COST = 70
+const HEAL_MAX_PER_RUN = 2
+const DROP_CHANCE_BASE = 32
+const DROP_CHANCE_RANK_STEP = 2
+const DROP_CHANCE_MINOR_BONUS = 16
+const DROP_GUARANTEED_STEP = CHECKPOINT_STEP * 2
 const RANKS = ["F", "E", "D", "C", "B", "A", "S"]
 
 const ENTRY_COSTS = {
@@ -24,13 +27,13 @@ const ENTRY_COSTS = {
 }
 
 const DUNGEON_NAMES = {
-	"F": "Bois fendu",
-	"E": "Caves de rouille",
-	"D": "Cryptes affamees",
-	"C": "Tour des echos",
-	"B": "Fosse des rois",
-	"A": "Citadelle noire",
-	"S": "Abime final",
+	"F": "Sous-bois",
+	"E": "Caves",
+	"D": "Cryptes",
+	"C": "Tour",
+	"B": "Fosse",
+	"A": "Citadelle",
+	"S": "Abime",
 }
 
 const DUNGEON_BACKGROUNDS = {
@@ -39,6 +42,12 @@ const DUNGEON_BACKGROUNDS = {
 		"res://Assets/Dungeons/Backgrounds/rank_f_02.png",
 		"res://Assets/Dungeons/Backgrounds/rank_f_03.png",
 		"res://Assets/Dungeons/Backgrounds/rank_f_04.png",
+	],
+	"E": [
+		"res://Assets/Dungeons/Backgrounds/rank_e_01.png",
+		"res://Assets/Dungeons/Backgrounds/rank_e_02.png",
+		"res://Assets/Dungeons/Backgrounds/rank_e_03.png",
+		"res://Assets/Dungeons/Backgrounds/rank_e_04.png",
 	],
 }
 
@@ -87,6 +96,7 @@ var current_floor = 1
 var checkpoint_floor = 1
 var phase = "idle"
 var player_energy = 0
+var heals_used = 0
 var shield_turns = 0
 var temp_atk_bonus = 0
 var temp_def_bonus = 0
@@ -129,6 +139,7 @@ func start_run(rank: String, player_rank: String, player_data) -> bool:
 	current_floor = checkpoint_floor
 	in_run = true
 	player_energy = 15
+	heals_used = 0
 	shield_turns = 0
 	temp_atk_bonus = 0
 	temp_def_bonus = 0
@@ -179,13 +190,14 @@ func use_skill(skill: String, player_data) -> bool:
 			_set_combat_fx("burst", damage)
 			_log(GlobalEngine.loc("dungeon.log.special", [damage]))
 		"heal":
-			if player_energy < 45:
+			if player_energy < HEAL_ENERGY_COST or heals_used >= HEAL_MAX_PER_RUN:
 				return false
-			player_energy -= 45
-			var heal = maxi(8, int(float(player_data.max_hp) * 0.18) + player_data.get_final_stat("WIL"))
+			player_energy -= HEAL_ENERGY_COST
+			heals_used += 1
+			var heal = maxi(8, int(float(player_data.max_hp) * 0.14) + int(float(player_data.get_final_stat("WIL")) * 0.6))
 			player_data.hp = mini(player_data.max_hp, player_data.hp + heal)
 			player_data.stats_updated.emit()
-			_log(GlobalEngine.loc("dungeon.log.heal", [heal]))
+			_log(GlobalEngine.loc("dungeon.log.heal_limited", [heal, maxi(0, HEAL_MAX_PER_RUN - heals_used)]))
 		"shield":
 			if player_energy < 35:
 				return false
@@ -254,6 +266,8 @@ func resolve_event(choice_index: int, player_data) -> bool:
 			var difficulty = 10 + rank_i * 4 + int(float(current_floor) * 0.18)
 			if rank_i == 0:
 				difficulty = 8 + int(_floor_curve() * 7.0)
+			elif rank_i == 1:
+				difficulty = 10 + int(_floor_curve() * 10.0)
 			if score >= difficulty:
 				player_energy = mini(ENERGY_MAX, player_energy + 25)
 				_log(GlobalEngine.loc("dungeon.log.test_success", [stat]))
@@ -261,6 +275,8 @@ func resolve_event(choice_index: int, player_data) -> bool:
 				var damage = 6 + rank_i * 5 + int(float(current_floor) * 0.45)
 				if rank_i == 0:
 					damage = 5 + int(_floor_curve() * 12.0)
+				elif rank_i == 1:
+					damage = 8 + int(_floor_curve() * 18.0)
 				damage = _round_combat_value(damage, 5)
 				player_data.take_damage(damage)
 				_log(GlobalEngine.loc("dungeon.log.test_fail", [stat, damage]))
@@ -269,6 +285,8 @@ func resolve_event(choice_index: int, player_data) -> bool:
 				var damage = 4 + rank_i * 4 + int(float(current_floor) * 0.35)
 				if rank_i == 0:
 					damage = 3 + int(_floor_curve() * 10.0)
+				elif rank_i == 1:
+					damage = 6 + int(_floor_curve() * 15.0)
 				damage = _round_combat_value(damage, 5)
 				player_data.take_damage(damage)
 				current_floor = mini(MAX_FLOOR - 1, current_floor + 1)
@@ -316,6 +334,9 @@ func get_dungeon_background_path(rank: String, floor: int = 1) -> String:
 	return ""
 
 func get_ambience_message(stage: int) -> String:
+	var key := "dungeon.ambience.%d" % clampi(stage, 0, AMBIENCE_MESSAGES.size() - 1)
+	if GlobalEngine.has_loc(key):
+		return GlobalEngine.loc(key)
 	return String(AMBIENCE_MESSAGES[clampi(stage, 0, AMBIENCE_MESSAGES.size() - 1)])
 
 func get_view_state(player_rank: String = "F") -> Dictionary:
@@ -331,6 +352,9 @@ func get_view_state(player_rank: String = "F") -> Dictionary:
 		"checkpoint_floor": checkpoint_floor,
 		"phase": phase,
 		"player_energy": player_energy,
+		"heals_used": heals_used,
+		"heals_remaining": maxi(0, HEAL_MAX_PER_RUN - heals_used),
+		"heal_energy_cost": HEAL_ENERGY_COST,
 		"shield_turns": shield_turns,
 		"enemy": enemy,
 		"event": event_data,
@@ -353,6 +377,7 @@ func to_dict() -> Dictionary:
 		"checkpoint_floor": checkpoint_floor,
 		"phase": phase,
 		"player_energy": player_energy,
+		"heals_used": heals_used,
 		"shield_turns": shield_turns,
 		"temp_atk_bonus": temp_atk_bonus,
 		"temp_def_bonus": temp_def_bonus,
@@ -372,6 +397,7 @@ func from_dict(data: Dictionary) -> void:
 	checkpoint_floor = int(data.get("checkpoint_floor", checkpoints.get(active_rank, 1)))
 	phase = String(data.get("phase", "idle"))
 	player_energy = int(data.get("player_energy", 0))
+	heals_used = clampi(int(data.get("heals_used", 0)), 0, HEAL_MAX_PER_RUN)
 	shield_turns = int(data.get("shield_turns", 0))
 	temp_atk_bonus = int(data.get("temp_atk_bonus", 0))
 	temp_def_bonus = int(data.get("temp_def_bonus", 0))
@@ -395,11 +421,16 @@ func has_pending_drop() -> bool:
 func register_drop(item: Dictionary) -> void:
 	if pending_drop_floor <= 0:
 		return
+	var bonuses = item.get("stat_bonuses", {})
+	if not (bonuses is Dictionary):
+		bonuses = {}
 	last_drop = {
 		"floor": pending_drop_floor,
 		"name": String(item.get("name", "Butin")),
 		"rarity": String(item.get("rarity", "common")),
 		"type": String(item.get("type", "")),
+		"base_power": int(item.get("base_power", 0)),
+		"stat_bonuses": bonuses.duplicate(true),
 		"template_id": String(item.get("template_id", "")),
 	}
 	pending_drop_floor = 0
@@ -447,6 +478,12 @@ func _generate_enemy() -> Dictionary:
 		base_atk = 6 + int(round(curve * 13.0))
 		base_def = 3 + int(round(curve * 10.0))
 		base_spd = 88 + int(round(curve * 30.0))
+	elif rank_i == 1:
+		var curve_e := _floor_curve()
+		base_hp = 46 + int(round(curve_e * 125.0))
+		base_atk = 10 + int(round(curve_e * 22.0))
+		base_def = 5 + int(round(curve_e * 14.0))
+		base_spd = 96 + int(round(curve_e * 38.0))
 	return {
 		"spawn_key": "%s_%d_%d" % [active_rank, current_floor, randi()],
 		"name": _enemy_name(type_name),
@@ -608,12 +645,12 @@ func _player_speed(player_data) -> int:
 	return maxi(1, int(player_data.spd) + temp_agi_bonus * 5)
 
 func _should_drop_loot() -> bool:
-	if current_floor % CHECKPOINT_STEP == 0:
+	if current_floor % DROP_GUARANTEED_STEP == 0 or current_floor >= MAX_FLOOR:
 		return true
 	var chance := DROP_CHANCE_BASE + _rank_index(active_rank) * DROP_CHANCE_RANK_STEP
-	if current_floor % 5 == 0:
+	if current_floor % CHECKPOINT_STEP == 0:
 		chance += DROP_CHANCE_MINOR_BONUS
-	chance = clampi(chance, 25, 85)
+	chance = clampi(chance, 25, 60)
 	return randi_range(1, 100) <= chance
 
 func _enemy_dead() -> bool:
@@ -632,7 +669,15 @@ func _add_energy(amount: int) -> void:
 func _rank_available(rank: String, player_rank: String) -> bool:
 	var wanted = RANKS.find(rank)
 	var current = RANKS.find(player_rank)
-	return wanted >= 0 and current >= 0 and wanted <= current
+	if wanted < 0 or current < 0 or wanted > current:
+		return false
+	for i in range(wanted):
+		if not _rank_completed(String(RANKS[i])):
+			return false
+	return true
+
+func _rank_completed(rank: String) -> bool:
+	return int(best_floors.get(rank, 1)) >= MAX_FLOOR or int(checkpoints.get(rank, 1)) >= MAX_FLOOR
 
 func _rank_index(rank: String) -> int:
 	return maxi(0, RANKS.find(rank))

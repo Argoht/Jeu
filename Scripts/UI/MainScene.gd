@@ -9,7 +9,7 @@ const BASE_SCREEN_MARGIN := 15.0
 const MOBILE_SAFE_TOP_FALLBACK := 76.0
 const MOBILE_SAFE_BOTTOM_FALLBACK := 72.0
 const MOBILE_TOUCH_TARGET := 56.0
-const MOBILE_NAV_HEIGHT := 58.0
+const MOBILE_NAV_HEIGHT := 96.0
 const MOBILE_INVENTORY_COLUMNS := 7
 const MOBILE_INVENTORY_ROWS := 5
 const MOBILE_INVENTORY_SLOT_SIZE := 78.0
@@ -102,6 +102,7 @@ var _safe_left_offset := BASE_SCREEN_MARGIN
 var _safe_right_offset := BASE_SCREEN_MARGIN
 var _safe_bottom_offset := BASE_SCREEN_MARGIN
 var _active_tab_name := "Personnage"
+var _navigation_buttons: Dictionary = {}
 var _touch_scroll_target: ScrollContainer = null
 var _touch_scroll_start_position := Vector2.ZERO
 var _touch_scroll_start_value := 0
@@ -109,10 +110,39 @@ var _touch_scroll_active_index := -1
 var _inventory_background: TextureRect = null
 var _inventory_scrim: ColorRect = null
 var _inventory_resource_label: Label = null
+var _rank_badge_button: Button = null
+var _class_badge_button: Button = null
+var _class_popup_overlay: ColorRect = null
+var _class_popup_title_label: Label = null
+var _class_popup_body_label: Label = null
+var _class_popup_close_button: Button = null
 
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_RESIZED:
 		call_deferred("_apply_mobile_layout")
+	elif what == NOTIFICATION_WM_GO_BACK_REQUEST and is_node_ready():
+		if not _handle_back():
+			GlobalEngine.save_game()
+			get_tree().quit()
+
+func _unhandled_input(event: InputEvent) -> void:
+	if event.is_action_pressed("ui_cancel") and _handle_back():
+		get_viewport().set_input_as_handled()
+
+func _handle_back() -> bool:
+	_reset_touch_scroll()
+	if is_instance_valid(_popup_manager) and _popup_manager.dismiss_top_popup():
+		return true
+	if is_instance_valid(_class_popup_overlay) and _class_popup_overlay.visible:
+		_class_popup_overlay.hide()
+		return true
+	var active_panel = _empty_tab_panels.get(_active_tab_name)
+	if is_instance_valid(active_panel) and active_panel.has_method("dismiss_details") and active_panel.dismiss_details():
+		return true
+	if _active_tab_name != "Missions":
+		_on_nav_pressed("Missions")
+		return true
+	return false
 
 func _input(event: InputEvent) -> void:
 	if _is_popup_active():
@@ -168,11 +198,16 @@ func _apply_canonical_stat_labels() -> void:
 # ── Lifecycle ─────────────────────────────────────────────────────────────────
 
 func _ready() -> void:
+	if _is_mobile_runtime():
+		get_tree().quit_on_go_back = false
 	_apply_canonical_stat_labels()
 	_apply_mobile_layout()
 
 	# Navigation
 	_connect_navigation()
+	inv_panel.resized.connect(func(): call_deferred("_apply_inventory_layout"))
+	btn_prev.button_down.connect(func(): GlobalEngine.play_ui_select(-14.0))
+	btn_next.button_down.connect(func(): GlobalEngine.play_ui_select(-14.0))
 	btn_prev.pressed.connect(_change_page.bind(-1))
 	btn_next.pressed.connect(_change_page.bind(1))
 	if game_zone is ScrollContainer:
@@ -187,6 +222,7 @@ func _ready() -> void:
 
 	# Bouton renommage pseudo
 	_add_rename_button()
+	_ensure_identity_badges()
 
 	# Ecran missions : enfant direct de la racine UI, pour ne pas heriter
 	# des marges/contraintes de GameZone.
@@ -205,15 +241,31 @@ func _ready() -> void:
 	GlobalEngine.stats_updated.connect(update_ui)
 	GlobalEngine.inventory_changed.connect(_on_inventory_changed)
 	GlobalEngine.language_changed.connect(_on_language_changed)
+	GlobalEngine.commerce_changed.connect(_apply_cosmetic_frame)
 	_apply_localized_texts()
 	update_ui()
+	_apply_cosmetic_frame()
 
 	_set_debug_mode(DEBUG_BAR_DEFAULT_VISIBLE)
-	_sync_tab_music("Personnage")
+	_on_nav_pressed("Missions")
 
 # ── Navigation ────────────────────────────────────────────────────────────────
 
 func _connect_navigation() -> void:
+	btn_campement.show()
+	btn_social.show()
+	var primary_row := btn_personnage.get_parent()
+	var secondary_row := btn_social.get_parent()
+	btn_grimoire.reparent(secondary_row)
+	btn_donjon.reparent(primary_row)
+	primary_row.move_child(btn_missions, 0)
+	primary_row.move_child(btn_personnage, 1)
+	primary_row.move_child(btn_donjon, 2)
+	secondary_row.move_child(btn_grimoire, 0)
+	secondary_row.move_child(btn_boutique, 1)
+	secondary_row.move_child(btn_options, 2)
+	var group := ButtonGroup.new()
+	group.allow_unpress = false
 	var bindings := [
 		[btn_personnage, "Personnage"],
 		[btn_campement, "Campement"],
@@ -228,6 +280,16 @@ func _connect_navigation() -> void:
 	for binding in bindings:
 		var button: Button = binding[0]
 		var tab_name: String = binding[1]
+		_navigation_buttons[tab_name] = button
+		button.toggle_mode = true
+		button.button_group = group
+		button.add_theme_color_override("font_pressed_color", Color("f6da8f"))
+		var selected_style = button.get_theme_stylebox("normal").duplicate()
+		if selected_style is StyleBoxFlat:
+			selected_style.border_color = Color("f6da8f")
+			selected_style.bg_color = Color("263745")
+			button.add_theme_stylebox_override("pressed", selected_style)
+		button.button_down.connect(func(): GlobalEngine.play_ui_select(-13.0))
 		button.pressed.connect(_on_nav_pressed.bind(tab_name))
 
 func _on_language_changed(_locale: String) -> void:
@@ -235,6 +297,8 @@ func _on_language_changed(_locale: String) -> void:
 	update_ui()
 	_update_debug_toggle_button()
 	_update_debug_invincible_button()
+	_update_identity_badges()
+	_refresh_class_popup_locale()
 	if is_instance_valid(_missions_panel) and _missions_panel.has_method("refresh"):
 		_missions_panel.refresh()
 	for panel in _empty_tab_panels.values():
@@ -273,6 +337,8 @@ func _apply_localized_texts() -> void:
 
 func _on_nav_pressed(tab_name: String) -> void:
 	_active_tab_name = tab_name
+	for key in _navigation_buttons:
+		_navigation_buttons[key].set_pressed_no_signal(key == tab_name)
 	_sync_tab_music(tab_name)
 	vitals_section.show()
 	_hide_root_tab_panels()
@@ -284,13 +350,15 @@ func _on_nav_pressed(tab_name: String) -> void:
 
 	_show_personnage_content(false)
 	if tab_name == "Missions":
+		_missions_panel.show()
 		if _missions_panel.has_method("refresh"):
 			_missions_panel.refresh()
-		_missions_panel.show()
 		_missions_panel.move_to_front()
 	else:
 		var panel = _empty_tab_panels.get(tab_name, null)
 		if is_instance_valid(panel):
+			if panel.has_method("refresh"):
+				panel.refresh()
 			panel.show()
 			panel.move_to_front()
 
@@ -301,13 +369,16 @@ func _on_nav_pressed(tab_name: String) -> void:
 
 func _sync_tab_music(tab_name: String) -> void:
 	if tab_name == "Donjon":
-		GlobalEngine.stop_music()
-		GlobalEngine.play_dungeon_ambience()
+		GlobalEngine.play_dungeon_music()
+	elif tab_name == "Missions":
+		GlobalEngine.stop_ambience()
+		GlobalEngine.play_mission_music()
 	else:
 		GlobalEngine.stop_ambience()
 		GlobalEngine.play_camp_music()
 
 func _show_personnage_content(is_visible: bool) -> void:
+	game_zone.visible = is_visible
 	hero_frame.visible = is_visible
 	stats_frame.visible = is_visible
 	inv_panel.visible = is_visible
@@ -389,6 +460,12 @@ func _build_empty_tab_panels() -> void:
 		panel.hide()
 
 func _create_empty_tab_panel(tab_name: String) -> Control:
+	if tab_name == "Social":
+		return preload("res://Scripts/UI/SocialPanel.gd").new()
+	if tab_name == "Campement":
+		return preload("res://Scripts/UI/BasePanel.gd").new()
+	if tab_name == "Boutique":
+		return preload("res://Scripts/UI/ShopPanel.gd").new()
 	if tab_name == "Donjon":
 		var dungeon_script = load("res://Scripts/UI/DungeonPanel.gd")
 		if dungeon_script != null:
@@ -402,6 +479,16 @@ func _create_empty_tab_panel(tab_name: String) -> Control:
 		_options_panel = panel
 		_update_debug_toggle_button()
 	return panel
+
+func _apply_cosmetic_frame() -> void:
+	if not is_instance_valid(hero_frame):
+		return
+	var existing = hero_frame.get_theme_stylebox("panel")
+	if existing is StyleBoxFlat:
+		var frame: StyleBoxFlat = existing.duplicate()
+		frame.border_color = GlobalEngine.commerce_system.selected_color()
+		frame.set_border_width_all(2)
+		hero_frame.add_theme_stylebox_override("panel", frame)
 
 func _update_debug_toggle_button() -> void:
 	if is_instance_valid(_options_panel):
@@ -433,6 +520,7 @@ func update_ui() -> void:
 
 	if is_instance_valid(label_pseudo):
 		label_pseudo.text = GlobalEngine.player_name.to_upper()
+	_update_identity_badges()
 	if is_instance_valid(avatar_view):
 		avatar_view.set_avatar_state(GlobalEngine.lvl, GlobalEngine.get_rank_by_level(GlobalEngine.lvl), GlobalEngine.inventory_system.equipment)
 
@@ -464,6 +552,7 @@ func update_ui() -> void:
 				btn.text = "+"
 				btn.custom_minimum_size = Vector2(MOBILE_TOUCH_TARGET, MOBILE_TOUCH_TARGET)
 				btn.add_theme_font_size_override("font_size", 18)
+				btn.button_down.connect(func(): GlobalEngine.play_ui_select(-14.0))
 				btn.pressed.connect(Callable(GlobalEngine, "add_stat").bind(s_key))
 				parent.add_child(btn)
 			btn.show()
@@ -493,6 +582,7 @@ func update_inventory_display() -> void:
 			_add_inventory_slot_effects(slot, true, accent)
 			var btn := Button.new()
 			_configure_item_button(btn, item)
+			btn.button_down.connect(func(): GlobalEngine.play_ui_select(-14.0))
 			btn.pressed.connect(_on_inventory_item_pressed.bind(item_idx, item))
 			slot.add_child(btn)
 			# Fait remplir le slot après add_child (sinon les ancres n'ont pas de parent)
@@ -521,6 +611,7 @@ func update_equipment_display() -> void:
 		_add_inventory_slot_effects(panel, true, accent)
 		var btn := Button.new()
 		_configure_item_button(btn, item)
+		btn.button_down.connect(func(): GlobalEngine.play_ui_select(-14.0))
 		btn.pressed.connect(_on_equipment_slot_pressed.bind(slot_type))
 		panel.add_child(btn)
 		btn.set_anchors_preset(Control.PRESET_FULL_RECT)
@@ -649,7 +740,7 @@ func _add_rename_button() -> void:
 		header_card.gui_input.connect(_on_name_header_input)
 
 	header_info.add_theme_constant_override("separation", 1)
-	header_info.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	header_info.mouse_filter = Control.MOUSE_FILTER_PASS
 
 	label_pseudo.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	label_pseudo.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -659,6 +750,269 @@ func _add_rename_button() -> void:
 	var title_label = header_info.get_node_or_null("Titre")
 	if is_instance_valid(title_label):
 		title_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+
+func _ensure_identity_badges() -> void:
+	var avatar_center = get_node_or_null("VBox/GameZone/VBox/HeroFrame/Margin/HeroLayout/AvatarCenter")
+	if not (avatar_center is Control):
+		return
+
+	if not is_instance_valid(_rank_badge_button):
+		_rank_badge_button = _make_identity_badge_button("F", GlobalEngine.loc("character.rank_tooltip"))
+		_rank_badge_button.button_down.connect(func(): GlobalEngine.play_ui_select(-14.0))
+
+	if not is_instance_valid(_class_badge_button):
+		_class_badge_button = _make_identity_badge_button("CL", GlobalEngine.loc("character.class_tooltip"))
+		_class_badge_button.button_down.connect(func(): GlobalEngine.play_ui_select(-14.0))
+		_class_badge_button.pressed.connect(_show_class_coming_panel)
+
+	for node in [_rank_badge_button, _class_badge_button]:
+		if not is_instance_valid(node):
+			continue
+		if node.get_parent() != avatar_center:
+			if is_instance_valid(node.get_parent()):
+				node.get_parent().remove_child(node)
+			avatar_center.add_child(node)
+
+	_layout_identity_badges()
+	_update_identity_badges()
+
+func _make_identity_badge_button(text: String, tooltip: String) -> Button:
+	var button := Button.new()
+	button.text = text
+	button.tooltip_text = tooltip
+	button.custom_minimum_size = Vector2(56, 56)
+	button.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	button.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	button.focus_mode = Control.FOCUS_NONE
+	button.mouse_filter = Control.MOUSE_FILTER_STOP
+	button.alignment = HORIZONTAL_ALIGNMENT_CENTER
+	button.add_theme_font_size_override("font_size", 23)
+	button.add_theme_constant_override("outline_size", 3)
+	button.add_theme_color_override("font_outline_color", Color(0.0, 0.012, 0.025, 1.0))
+	return button
+
+func _update_identity_badges() -> void:
+	_ensure_identity_badges_if_ready()
+	var rank := GlobalEngine.get_rank_by_level(GlobalEngine.lvl)
+	var rank_color := _rank_badge_color(rank)
+	if is_instance_valid(_rank_badge_button):
+		_rank_badge_button.text = rank
+		_rank_badge_button.tooltip_text = "%s %s" % [GlobalEngine.loc("character.rank_tooltip"), rank]
+		_apply_identity_badge_style(_rank_badge_button, rank_color)
+
+	if is_instance_valid(_class_badge_button):
+		_class_badge_button.text = "CL"
+		_class_badge_button.tooltip_text = GlobalEngine.loc("character.class_tooltip")
+		_apply_identity_badge_style(_class_badge_button, Color("#9fb6c8"))
+
+func _ensure_identity_badges_if_ready() -> void:
+	if not is_inside_tree():
+		return
+	if is_instance_valid(_rank_badge_button) and is_instance_valid(_class_badge_button):
+		_layout_identity_badges()
+		return
+	_ensure_identity_badges()
+
+func _layout_identity_badges() -> void:
+	var badge_size := 56.0
+	var side_margin := 8.0
+	var top_margin := 7.0
+	if is_instance_valid(_rank_badge_button):
+		_rank_badge_button.set_anchors_preset(Control.PRESET_TOP_LEFT)
+		_rank_badge_button.offset_left = side_margin
+		_rank_badge_button.offset_top = top_margin
+		_rank_badge_button.offset_right = side_margin + badge_size
+		_rank_badge_button.offset_bottom = top_margin + badge_size
+		_rank_badge_button.move_to_front()
+	if is_instance_valid(_class_badge_button):
+		_class_badge_button.anchor_left = 1.0
+		_class_badge_button.anchor_right = 1.0
+		_class_badge_button.anchor_top = 0.0
+		_class_badge_button.anchor_bottom = 0.0
+		_class_badge_button.offset_left = -side_margin - badge_size
+		_class_badge_button.offset_top = top_margin
+		_class_badge_button.offset_right = -side_margin
+		_class_badge_button.offset_bottom = top_margin + badge_size
+		_class_badge_button.move_to_front()
+
+func _apply_identity_badge_style(button: Button, accent: Color) -> void:
+	button.add_theme_color_override("font_color", accent)
+	button.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0))
+	button.add_theme_constant_override("shadow_offset_y", 0)
+	button.add_theme_stylebox_override("normal", _identity_badge_style(accent, 0.0, 1))
+	button.add_theme_stylebox_override("hover", _identity_badge_style(accent, 0.035, 1))
+	button.add_theme_stylebox_override("pressed", _identity_badge_style(accent, 0.065, 2))
+	button.add_theme_stylebox_override("focus", _identity_badge_style(accent, 0.02, 1))
+	_add_identity_badge_motifs(button, accent)
+
+func _identity_badge_style(accent: Color, boost: float, width: int) -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0.008, 0.012, 0.020, 0.93).lerp(accent, boost)
+	style.border_width_left = width
+	style.border_width_top = width
+	style.border_width_right = width
+	style.border_width_bottom = width
+	style.border_color = Color(accent.r, accent.g, accent.b, 0.74)
+	style.corner_radius_top_left = 6
+	style.corner_radius_top_right = 6
+	style.corner_radius_bottom_left = 6
+	style.corner_radius_bottom_right = 6
+	style.content_margin_left = 10
+	style.content_margin_top = 8
+	style.content_margin_right = 10
+	style.content_margin_bottom = 8
+	return style
+
+func _add_identity_badge_motifs(button: Button, accent: Color) -> void:
+	var motif_color := Color(accent.r, accent.g, accent.b, 0.62)
+	var soft_color := Color(accent.r, accent.g, accent.b, 0.34)
+	var specs := [
+		["MotifTopLeftH", 0.0, 0.0, 0.0, 0.0, 8, 7, 23, 9, motif_color],
+		["MotifTopLeftV", 0.0, 0.0, 0.0, 0.0, 7, 8, 9, 23, motif_color],
+		["MotifBottomRightH", 1.0, 1.0, 1.0, 1.0, -23, -9, -8, -7, motif_color],
+		["MotifBottomRightV", 1.0, 1.0, 1.0, 1.0, -9, -23, -7, -8, motif_color],
+		["MotifTopMark", 0.5, 0.0, 0.5, 0.0, -6, 7, 6, 9, soft_color],
+		["MotifBottomMark", 0.5, 1.0, 0.5, 1.0, -6, -9, 6, -7, soft_color],
+	]
+	for spec in specs:
+		var rect := button.get_node_or_null(String(spec[0])) as ColorRect
+		if not is_instance_valid(rect):
+			rect = ColorRect.new()
+			rect.name = String(spec[0])
+			rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			button.add_child(rect)
+		rect.color = spec[9]
+		rect.anchor_left = float(spec[1])
+		rect.anchor_top = float(spec[2])
+		rect.anchor_right = float(spec[3])
+		rect.anchor_bottom = float(spec[4])
+		rect.offset_left = float(spec[5])
+		rect.offset_top = float(spec[6])
+		rect.offset_right = float(spec[7])
+		rect.offset_bottom = float(spec[8])
+
+func _rank_badge_color(rank: String) -> Color:
+	match rank:
+		"F":
+			return Color("#9da6b3")
+		"E":
+			return Color("#4ee58a")
+		"D":
+			return Color("#51d7ff")
+		"C":
+			return Color("#579dff")
+		"B":
+			return Color("#bd7cff")
+		"A":
+			return Color("#ffd166")
+		"S":
+			return Color("#ff6262")
+	return Color("#9da6b3")
+
+func _show_class_coming_panel() -> void:
+	_ensure_class_popup()
+	_refresh_class_popup_locale()
+	if is_instance_valid(_class_popup_overlay):
+		_class_popup_overlay.show()
+		_class_popup_overlay.move_to_front()
+
+func _ensure_class_popup() -> void:
+	if is_instance_valid(_class_popup_overlay):
+		return
+
+	_class_popup_overlay = ColorRect.new()
+	_class_popup_overlay.name = "ClassComingOverlay"
+	_class_popup_overlay.color = Color(0.0, 0.0, 0.0, 0.62)
+	_class_popup_overlay.mouse_filter = Control.MOUSE_FILTER_STOP
+	_class_popup_overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_class_popup_overlay.hide()
+	_class_popup_overlay.gui_input.connect(_on_class_popup_overlay_input)
+	add_child(_class_popup_overlay)
+	_class_popup_overlay.offset_left = 0
+	_class_popup_overlay.offset_top = 0
+	_class_popup_overlay.offset_right = 0
+	_class_popup_overlay.offset_bottom = 0
+
+	var center := CenterContainer.new()
+	center.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	center.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_class_popup_overlay.add_child(center)
+
+	var card := PanelContainer.new()
+	card.mouse_filter = Control.MOUSE_FILTER_STOP
+	card.custom_minimum_size = Vector2(280, 160)
+	card.add_theme_stylebox_override("panel", _class_popup_style())
+	center.add_child(card)
+
+	var margin := MarginContainer.new()
+	margin.add_theme_constant_override("margin_left", 18)
+	margin.add_theme_constant_override("margin_top", 18)
+	margin.add_theme_constant_override("margin_right", 18)
+	margin.add_theme_constant_override("margin_bottom", 18)
+	card.add_child(margin)
+
+	var box := VBoxContainer.new()
+	box.add_theme_constant_override("separation", 12)
+	margin.add_child(box)
+
+	_class_popup_title_label = Label.new()
+	_class_popup_title_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_class_popup_title_label.add_theme_font_size_override("font_size", 20)
+	_class_popup_title_label.add_theme_color_override("font_color", Color("#bd7cff"))
+	box.add_child(_class_popup_title_label)
+
+	_class_popup_body_label = Label.new()
+	_class_popup_body_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_class_popup_body_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	_class_popup_body_label.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_class_popup_body_label.add_theme_font_size_override("font_size", 22)
+	_class_popup_body_label.add_theme_color_override("font_color", Color("#d9f7ff"))
+	box.add_child(_class_popup_body_label)
+
+	_class_popup_close_button = Button.new()
+	_class_popup_close_button.custom_minimum_size = Vector2(0, 46)
+	_class_popup_close_button.add_theme_stylebox_override("normal", _inventory_nav_button_style())
+	_class_popup_close_button.add_theme_stylebox_override("pressed", _inventory_nav_button_style(Color(0.08, 0.04, 0.05, 1), Color("#bd7cff")))
+	_class_popup_close_button.button_down.connect(func(): GlobalEngine.play_ui_select(-14.0))
+	_class_popup_close_button.pressed.connect(func():
+		if is_instance_valid(_class_popup_overlay):
+			_class_popup_overlay.hide()
+	)
+	box.add_child(_class_popup_close_button)
+
+	_refresh_class_popup_locale()
+
+func _refresh_class_popup_locale() -> void:
+	if is_instance_valid(_class_popup_title_label):
+		_class_popup_title_label.text = GlobalEngine.loc("placeholder.class_title")
+	if is_instance_valid(_class_popup_body_label):
+		_class_popup_body_label.text = GlobalEngine.loc("placeholder.class_body")
+	if is_instance_valid(_class_popup_close_button):
+		_class_popup_close_button.text = GlobalEngine.loc("popup.close")
+
+func _on_class_popup_overlay_input(event: InputEvent) -> void:
+	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
+		_class_popup_overlay.hide()
+		accept_event()
+	elif event is InputEventScreenTouch and event.pressed:
+		_class_popup_overlay.hide()
+		accept_event()
+
+func _class_popup_style() -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0.012, 0.015, 0.024, 0.98)
+	style.border_width_left = 1
+	style.border_width_top = 1
+	style.border_width_right = 1
+	style.border_width_bottom = 2
+	style.border_color = Color(0.74, 0.49, 1.0, 0.72)
+	style.corner_radius_top_left = 6
+	style.corner_radius_top_right = 6
+	style.corner_radius_bottom_left = 6
+	style.corner_radius_bottom_right = 6
+	style.shadow_color = Color(0.44, 0.20, 0.74, 0.26)
+	style.shadow_size = 12
+	return style
 
 func _on_name_header_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
@@ -672,6 +1026,10 @@ func _apply_mobile_navigation_targets() -> void:
 	for button in [btn_personnage, btn_campement, btn_missions, btn_grimoire, btn_social, btn_donjon, btn_boutique, btn_options]:
 		if is_instance_valid(button):
 			button.custom_minimum_size = Vector2(0, MOBILE_NAV_HEIGHT)
+			button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			button.size_flags_stretch_ratio = 1.0
+			button.clip_text = true
+			button.add_theme_font_size_override("font_size", 24)
 
 func _apply_mobile_layout() -> void:
 	_apply_mobile_safe_area()
@@ -680,6 +1038,7 @@ func _apply_mobile_layout() -> void:
 	_apply_mobile_navigation_targets()
 	_apply_stats_layout()
 	_apply_inventory_layout()
+	_layout_identity_badges()
 	call_deferred("_sync_content_panels_layout")
 	if is_node_ready():
 		call_deferred("update_inventory_display")
@@ -736,7 +1095,7 @@ func _configure_game_scroll() -> void:
 		var content = game_zone.get_node_or_null("VBox")
 		if content is Control:
 			content.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-			content.custom_minimum_size.x = maxf(game_zone.size.x, content.custom_minimum_size.x)
+			content.custom_minimum_size.x = 0.0
 
 func _apply_content_spacing() -> void:
 	var content = get_node_or_null("VBox/GameZone/VBox")
@@ -1153,12 +1512,11 @@ func _reset_touch_scroll() -> void:
 	_touch_scroll_start_value = 0
 
 func _is_popup_active() -> bool:
+	if is_instance_valid(_class_popup_overlay) and _class_popup_overlay.visible:
+		return true
 	if not is_instance_valid(_popup_manager):
 		return false
-	for child in _popup_manager.get_children():
-		if child is Control and child.visible:
-			return true
-	return false
+	return _popup_manager.has_active_popup()
 
 func _get_active_scroll_container_at(position: Vector2):
 	var root: Node = null

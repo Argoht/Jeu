@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="MissionData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://Scripts/Resources/MissionData.gd" id="1_mission"]
+
+[resource]
+script = ExtResource("1_mission")
+id = "c_immersion_glaciale"
+title = "Immersion glaciale"
+description = "Prendre une douche entièrement froide de 5 minutes minimum."
+rank = 3
+type = 0
+req_wil = 26
+base_xp = 1300
+reward_stat = 8
+reward_stat_amount = 1

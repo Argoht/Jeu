@@ -207,8 +207,14 @@ func update_derived_stats() -> void:
 
 ## Apply passive HP/stamina regen for time spent offline.
 func apply_offline_regen(elapsed_seconds: float) -> void:
-	hp = min(max_hp, hp + int(elapsed_seconds * HP_REGEN_RATE))
-	stamina = min(max_stamina, stamina + int(elapsed_seconds * STAMINA_REGEN_RATE))
+	_process_regen(maxf(0.0, elapsed_seconds))
+
+func get_regen_state() -> Dictionary:
+	return {"hp": _hp_regen_acc, "stamina": _stamina_regen_acc}
+
+func load_regen_state(data: Dictionary) -> void:
+	_hp_regen_acc = clampf(float(data.get("hp", 0.0)), 0.0, 0.999999)
+	_stamina_regen_acc = clampf(float(data.get("stamina", 0.0)), 0.0, 0.999999)
 
 # ── Level / rank helpers ──────────────────────────────────────────────────────
 

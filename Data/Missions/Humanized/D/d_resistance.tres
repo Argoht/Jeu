@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="MissionData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://Scripts/Resources/MissionData.gd" id="1_mission"]
+
+[resource]
+script = ExtResource("1_mission")
+id = "d_resistance"
+title = "Résistance"
+description = "Accomplir un effort physique intense."
+rank = 2
+type = 1
+req_end = 21
+base_xp = 1800
+reward_stat = 3
+reward_stat_amount = 1
+proof_required = true
